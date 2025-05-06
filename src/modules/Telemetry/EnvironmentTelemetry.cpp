@@ -1,4 +1,6 @@
 #include "configuration.h"
+#include "Sensor/RandomSensor.h"
+RandomSensor randomSensor;
 
 #if !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR
 
@@ -190,9 +192,9 @@ int32_t EnvironmentTelemetryModule::runOnce()
         without having to configure it from the PythonAPI or WebUI.
     */
 
-    // moduleConfig.telemetry.environment_measurement_enabled = 1;
-    // moduleConfig.telemetry.environment_screen_enabled = 1;
-    // moduleConfig.telemetry.environment_update_interval = 15;
+    moduleConfig.telemetry.environment_measurement_enabled = 1;
+    moduleConfig.telemetry.environment_screen_enabled = 1;
+    moduleConfig.telemetry.environment_update_interval = 15;
 
     if (!(moduleConfig.telemetry.environment_measurement_enabled || moduleConfig.telemetry.environment_screen_enabled ||
           ENVIRONMENTAL_TELEMETRY_MODULE_ENABLE)) {
@@ -222,6 +224,8 @@ int32_t EnvironmentTelemetryModule::runOnce()
             if (bmp280Sensor.hasSensor())
                 result = bmp280Sensor.runOnce();
 #endif
+            // RandomSensor is a dummy sensor that always returns random values
+            result = randomSensor.runOnce();
             if (bme280Sensor.hasSensor())
                 result = bme280Sensor.runOnce();
             if (bmp3xxSensor.hasSensor())
@@ -511,6 +515,9 @@ bool EnvironmentTelemetryModule::getEnvironmentTelemetry(meshtastic_Telemetry *m
         hasSensor = true;
     }
 #endif
+    //  Random sensor
+    valid = valid && randomSensor.getMetrics(m);
+    hasSensor = true;
     if (bme280Sensor.hasSensor()) {
         valid = valid && bme280Sensor.getMetrics(m);
         hasSensor = true;
@@ -691,6 +698,10 @@ AdminMessageHandleResult EnvironmentTelemetryModule::handleAdminMessageForModule
 {
     AdminMessageHandleResult result = AdminMessageHandleResult::NOT_HANDLED;
 #if !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR_EXTERNAL
+    // Random sensor
+    result = randomSensor.handleAdminMessage(mp, request, response);
+    if (result != AdminMessageHandleResult::NOT_HANDLED)
+        return result;
     if (dfRobotLarkSensor.hasSensor()) {
         result = dfRobotLarkSensor.handleAdminMessage(mp, request, response);
         if (result != AdminMessageHandleResult::NOT_HANDLED)
