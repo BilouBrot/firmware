@@ -11,7 +11,6 @@
 #include <stdexcept>
 #include <sys/time.h>
 #include <time.h>
-#include "FlashLogger.h"
 
 #ifdef ARCH_PORTDUINO
 #include "platform/portduino/PortduinoGlue.h"
@@ -285,15 +284,6 @@ void RedirectablePrint::log(const char *logLevel, const char *format, ...)
     strcpy(newFormat, format);
     newFormat[len] = '\n';
     newFormat[len + 1] = '\0';
-
-    // Add flash logging
-    va_list arg;
-    va_start(arg, format);
-    char buffer[256];
-    vsnprintf(buffer, sizeof(buffer), format, arg);
-    va_end(arg);
-    
-    meshtastic::flashLogger.writeLog(logLevel, buffer);
 
 #if ARCH_PORTDUINO
     // level trace is special, two possible ways to handle it.
