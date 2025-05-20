@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <sys/time.h>
 #include <time.h>
+#include "FlashLogger.h"
 
 #ifdef ARCH_PORTDUINO
 #include "platform/portduino/PortduinoGlue.h"
@@ -252,29 +253,6 @@ void RedirectablePrint::log_to_ble(const char *logLevel, const char *format, va_
 #endif
 }
 
-void RedirectablePrint::log_to_file(const char *logLevel, const char *format, va_list arg)
-{
-#if ARCH_PORTDUINO
-    if (settingsStrings[logfilename] != "") {
-        if (settingsStrings[logfilename] != "") {
-            try {
-                traceFile.open(settingsStrings[logfilename], std::ios::app);
-                traceFile.exceptions(std::ios::failbit | std::ios::badbit);
-            } catch (const std::ios_base::failure &e) {
-                return;
-            }
-        }
-        if (traceFile.is_open()) {
-            traceFile << mt_sprintf(format, arg) << std::endl;
-        }
-    }
-#else
-    (void)logLevel;
-    (void)format;
-    (void)arg;
-#endif
-}
-
 meshtastic_LogRecord_Level RedirectablePrint::getLogLevel(const char *logLevel)
 {
     meshtastic_LogRecord_Level ll = meshtastic_LogRecord_Level_UNSET; // default to unset
@@ -307,6 +285,15 @@ void RedirectablePrint::log(const char *logLevel, const char *format, ...)
     strcpy(newFormat, format);
     newFormat[len] = '\n';
     newFormat[len + 1] = '\0';
+
+    // Add flash logging
+    va_list arg;
+    va_start(arg, format);
+    char buffer[256];
+    vsnprintf(buffer, sizeof(buffer), format, arg);
+    va_end(arg);
+    
+    meshtastic::flashLogger.writeLog(logLevel, buffer);
 
 #if ARCH_PORTDUINO
     // level trace is special, two possible ways to handle it.
@@ -354,7 +341,6 @@ void RedirectablePrint::log(const char *logLevel, const char *format, ...)
         log_to_serial(logLevel, newFormat, arg);
         log_to_syslog(logLevel, newFormat, arg);
         log_to_ble(logLevel, newFormat, arg);
-        log_to_file(logLevel, newFormat, arg);
 
         va_end(arg);
 #ifdef HAS_FREE_RTOS
