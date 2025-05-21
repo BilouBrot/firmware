@@ -175,33 +175,8 @@ void RedirectablePrint::log_to_flash(const char *logLevel, const char *format, v
 {
 #ifdef FSCom
     spiLock->lock();
-    if (!FSBegin()) {
-        LOG_DEBUG("An Error has occurred while mounting the filesystem");
-        return;
-    }
 
     FSCom.mkdir("/static");
-
-    // If the file doesn't exist, write the header.
-    if (!FSCom.exists("/static/logfile.txt")) {
-        //--------- Write to file
-        File fileToWrite = FSCom.open("/static/logfile.txt", FILE_O_WRITE);
-
-        if (!fileToWrite) {
-            LOG_ERROR("There was an error opening the file for writing");
-            return;
-        }
-
-        // Print the CSV header
-        if (fileToWrite.println(
-                "time,from,sender name,sender lat,sender long,rx lat,rx long,rx elevation,rx snr,distance,hop limit,payload")) {
-            LOG_INFO("File was written");
-        } else {
-            LOG_ERROR("File write failed");
-        }
-        fileToWrite.flush();
-        fileToWrite.close();
-    }
 
     // Open the file
     auto fileToWrite = FSCom.open("/static/logfile.txt", FILE_O_WRITE);
