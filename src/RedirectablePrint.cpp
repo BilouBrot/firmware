@@ -11,6 +11,8 @@
 #include <stdexcept>
 #include <sys/time.h>
 #include <time.h>
+#include "FSCommon.h"
+#include "SPILock.h"
 
 #ifdef ARCH_PORTDUINO
 #include "platform/portduino/PortduinoGlue.h"
@@ -167,6 +169,66 @@ void RedirectablePrint::log_to_serial(const char *logLevel, const char *format, 
         print("] ");
     }
     r += vprintf(logLevel, format, arg);
+}
+
+void RedirectablePrint::log_to_flash(const char *logLevel, const char *format, va_list arg)
+{
+#ifdef FSCom
+    spiLock->lock();
+    if (!FSBegin()) {
+        LOG_DEBUG("An Error has occurred while mounting the filesystem");
+        return;
+    }
+
+    FSCom.mkdir("/static");
+
+    // If the file doesn't exist, write the header.
+    if (!FSCom.exists("/static/logfile.txt")) {
+        //--------- Write to file
+        File fileToWrite = FSCom.open("/static/logfile.txt", FILE_O_WRITE);
+
+        if (!fileToWrite) {
+            LOG_ERROR("There was an error opening the file for writing");
+            return;
+        }
+
+        // Print the CSV header
+        if (fileToWrite.println(
+                "time,from,sender name,sender lat,sender long,rx lat,rx long,rx elevation,rx snr,distance,hop limit,payload")) {
+            LOG_INFO("File was written");
+        } else {
+            LOG_ERROR("File write failed");
+        }
+        fileToWrite.flush();
+        fileToWrite.close();
+    }
+
+    // Open the file
+    auto fileToWrite = FSCom.open("/static/logfile.txt", FILE_O_WRITE);
+
+    if (!fileToWrite) {
+        LOG_ERROR("There was an error opening the file for appending");
+        return;
+    }
+
+    // Seek to the end of the file to append
+    fileToWrite.seek(fileToWrite.size());
+
+    fileToWrite.printf("%s ", logLevel);
+
+    fileToWrite.printf("| %u ", millis());
+    auto thread = concurrency::OSThread::currentThread;
+    if (thread) {
+        fileToWrite.printf("[%s] ", thread->ThreadName.c_str());
+    }
+    fileToWrite.printf(format, arg);
+    fileToWrite.printf("\n");
+    fileToWrite.flush();
+    fileToWrite.close();
+    spiLock->unlock();
+#else
+    LOG_ERROR("ERROR: Filesystem not implemented");
+#endif
 }
 
 void RedirectablePrint::log_to_syslog(const char *logLevel, const char *format, va_list arg)
@@ -329,6 +391,7 @@ void RedirectablePrint::log(const char *logLevel, const char *format, ...)
         va_start(arg, format);
 
         log_to_serial(logLevel, newFormat, arg);
+        log_to_flash(logLevel, newFormat, arg);
         log_to_syslog(logLevel, newFormat, arg);
         log_to_ble(logLevel, newFormat, arg);
 
