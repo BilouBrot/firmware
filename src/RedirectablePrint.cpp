@@ -182,10 +182,6 @@ void RedirectablePrint::log_to_flash(const char *logLevel, const char *format, v
     auto fileToWrite = FSCom.open("/static/logfile.txt", FILE_O_WRITE);
 
     if (!fileToWrite) {
-        // Print directly to serial instead of using LOG_ERROR
-        if (dest) {
-            dest->println("ERROR: Failed to open logfile.txt for writing");
-        }
         spiLock->unlock();
         return;
     }
@@ -205,10 +201,6 @@ void RedirectablePrint::log_to_flash(const char *logLevel, const char *format, v
     fileToWrite.flush();
     fileToWrite.close();
     spiLock->unlock();
-#else
-    (void)logLevel;  // Prevent unused parameter warnings
-    (void)format;
-    (void)arg;
 #endif
 }
 
