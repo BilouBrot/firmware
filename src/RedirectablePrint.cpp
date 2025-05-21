@@ -135,13 +135,13 @@ void RedirectablePrint::log_to_serial(const char *logLevel, const char *format, 
         if (color) {
             ::printf("\u001b[0m");
         }
-        ::printf("| %02d:%02d:%02d %u ", hour, min, sec, millis() / 1000);
+        ::printf("| %02d:%02d:%02d %u ", hour, min, sec, millis());
 #else
         printf("%s ", logLevel);
         if (color) {
             printf("\u001b[0m");
         }
-        printf("| %02d:%02d:%02d %u ", hour, min, sec, millis() / 1000);
+        printf("| %02d:%02d:%02d %u ", hour, min, sec, millis());
 #endif
     } else {
 #ifdef ARCH_PORTDUINO
@@ -149,13 +149,13 @@ void RedirectablePrint::log_to_serial(const char *logLevel, const char *format, 
         if (color) {
             ::printf("\u001b[0m");
         }
-        ::printf("| ??:??:?? %u ", millis() / 1000);
+        ::printf("| ??:??:?? %u ", millis());
 #else
         printf("%s ", logLevel);
         if (color) {
             printf("\u001b[0m");
         }
-        printf("| ??:??:?? %u ", millis() / 1000);
+        printf("| ??:??:?? %u ", millis());
 #endif
     }
     auto thread = concurrency::OSThread::currentThread;
