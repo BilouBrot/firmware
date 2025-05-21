@@ -364,7 +364,7 @@ void RedirectablePrint::log(const char *logLevel, const char *format, ...)
         va_start(arg, format);
 
         log_to_serial(logLevel, newFormat, arg);
-        log_to_flash(logLevel, newFormat, arg);
+        // log_to_flash(logLevel, newFormat, arg);
         log_to_syslog(logLevel, newFormat, arg);
         log_to_ble(logLevel, newFormat, arg);
 
