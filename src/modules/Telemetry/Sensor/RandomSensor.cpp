@@ -84,42 +84,6 @@ bool RandomSensor::getMetrics(meshtastic_Telemetry *measurement)
 
     measurement->variant.environment_metrics.has_soil_temperature = true;
     measurement->variant.environment_metrics.soil_temperature = random(0, 5000) / 100.0;
-    
-    LOG_INFO("Random sensor values - Temp: %.2f°C, Humidity: %.2f%%", 
-            measurement->variant.environment_metrics.temperature,
-            measurement->variant.environment_metrics.relative_humidity);
-
-    LOG_INFO("Random sensor values - Pressure: %.2f hPa, Gas Resistance: %.2f MOhm",
-            measurement->variant.environment_metrics.barometric_pressure,
-            measurement->variant.environment_metrics.gas_resistance);
-
-    LOG_INFO("Random sensor values - IAQ: %d, Distance: %.2f m", 
-            measurement->variant.environment_metrics.iaq,
-            measurement->variant.environment_metrics.distance);
-
-    LOG_INFO("Random sensor values - Lux: %.2f, White Lux: %.2f, IR Lux: %.2f, UV Lux: %.2f", 
-            measurement->variant.environment_metrics.lux,
-            measurement->variant.environment_metrics.white_lux,
-            measurement->variant.environment_metrics.ir_lux,
-            measurement->variant.environment_metrics.uv_lux);
-
-    LOG_INFO("Random sensor values - Wind Direction: %d°, Wind Speed: %.2f m/s, Wind Gust: %.2f m/s, Wind Lull: %.2f m/s", 
-            measurement->variant.environment_metrics.wind_direction,
-            measurement->variant.environment_metrics.wind_speed,
-            measurement->variant.environment_metrics.wind_gust,
-            measurement->variant.environment_metrics.wind_lull);
-
-    LOG_INFO("Random sensor values - Weight: %.2f kg, Radiation: %.2f µSv/h", 
-            measurement->variant.environment_metrics.weight,
-            measurement->variant.environment_metrics.radiation);
-
-    LOG_INFO("Random sensor values - Rainfall 1h: %.2f mm, Rainfall 24h: %.2f mm", 
-            measurement->variant.environment_metrics.rainfall_1h,
-            measurement->variant.environment_metrics.rainfall_24h);
-
-    LOG_INFO("Random sensor values - Soil Moisture: %d%%, Soil Temperature: %.2f°C", 
-            measurement->variant.environment_metrics.soil_moisture,
-            measurement->variant.environment_metrics.soil_temperature);
             
     return true;
 }
