@@ -1,0 +1,391 @@
+#include "MessageLogModule.h"
+#include "Default.h"
+#include "MeshService.h"
+#include "NodeDB.h"
+#include "Router.h"
+#include "RTC.h"
+#include "TypeConversions.h"
+#include "configuration.h"
+#include "main.h"
+#include "ExternalNotificationModule.h"
+#include "FSCommon.h"
+#include <sys/stat.h>
+
+#ifdef FSCom
+#include "SPILock.h"
+#endif
+
+MessageLogModule *messageLogModule;
+
+// Port number strings for human-readable output
+static const char* portNumToString(meshtastic_PortNum portnum) {
+    switch (portnum) {
+        case meshtastic_PortNum_TEXT_MESSAGE_APP: return "TEXT_MESSAGE";
+        case meshtastic_PortNum_NODEINFO_APP: return "NODEINFO";
+        case meshtastic_PortNum_POSITION_APP: return "POSITION";
+        case meshtastic_PortNum_ADMIN_APP: return "ADMIN";
+        case meshtastic_PortNum_ROUTING_APP: return "ROUTING";
+        case meshtastic_PortNum_REPLY_APP: return "REPLY";
+        case meshtastic_PortNum_TELEMETRY_APP: return "TELEMETRY";
+        case meshtastic_PortNum_TRACEROUTE_APP: return "TRACEROUTE";
+        case meshtastic_PortNum_DETECTION_SENSOR_APP: return "DETECTION_SENSOR";
+        case meshtastic_PortNum_ALERT_APP: return "ALERT";
+        case meshtastic_PortNum_WAYPOINT_APP: return "WAYPOINT";
+        case meshtastic_PortNum_AUDIO_APP: return "AUDIO";
+        case meshtastic_PortNum_PRIVATE_APP: return "PRIVATE";
+        default: return "UNKNOWN";
+    }
+}
+
+MessageLogModule::MessageLogModule() 
+    : ProtobufModule("MessageLog", meshtastic_PortNum_ADMIN_APP, &meshtastic_AdminMessage_msg),
+      concurrency::OSThread("MessageLog")
+{
+    logBuffer.reserve(MESSAGE_LOG_BUFFER_SIZE);
+}
+
+void MessageLogModule::init()
+{
+    LOG_INFO("Initializing Message Log Module");
+    
+    // Initialize log directory
+    initLogDirectory();
+    
+    // Create initial log file
+    createNewLogFile();
+    
+    // Set thread interval to 10 seconds for periodic flushing
+    setInterval(10 * 1000);
+    
+    LOG_INFO("Message Log Module initialized");
+}
+
+void MessageLogModule::logSentMessage(const meshtastic_MeshPacket &mp)
+{
+#ifndef FSCom
+    return; // No filesystem available
+#else
+    MessageLogEntry entry = createLogEntry(mp, true);
+    logBuffer.push_back(entry);
+    sentMessageCount++;
+    totalMessagesLogged++;
+    
+    LOG_DEBUG("Logged sent message: from=0x%08x, to=0x%08x, id=0x%08x, port=%s", 
+              mp.from, mp.to, mp.id, portNumToString(mp.decoded.portnum));
+    
+    // Check if message contains bell character
+    if (containsBellCharacter(mp)) {
+        bellMessageCount++;
+        LOG_DEBUG("Sent message contains bell character");
+    }
+    
+    // Flush if buffer is full
+    if (logBuffer.size() >= MESSAGE_LOG_BUFFER_SIZE) {
+        flushLogBuffer();
+    }
+#endif
+}
+
+void MessageLogModule::logReceivedMessage(const meshtastic_MeshPacket &mp, int32_t rxSnr, int32_t rxRssi)
+{
+#ifndef FSCom
+    return; // No filesystem available
+#else
+    MessageLogEntry entry = createLogEntry(mp, false, rxSnr, rxRssi);
+    logBuffer.push_back(entry);
+    receivedMessageCount++;
+    totalMessagesLogged++;
+    
+    LOG_DEBUG("Logged received message: from=0x%08x, to=0x%08x, id=0x%08x, port=%s", 
+              mp.from, mp.to, mp.id, portNumToString(mp.decoded.portnum));
+    
+    // Check if message contains bell character
+    if (containsBellCharacter(mp)) {
+        bellMessageCount++;
+        LOG_DEBUG("Received message contains bell character");
+    }
+    
+    // Flush if buffer is full
+    if (logBuffer.size() >= MESSAGE_LOG_BUFFER_SIZE) {
+        flushLogBuffer();
+    }
+#endif
+}
+
+uint32_t MessageLogModule::getTimeSinceLastBell()
+{
+    if (externalNotificationModule) {
+        return externalNotificationModule->getTimeSinceLastBell();
+    }
+    return UINT32_MAX; // No bell received or module not available
+}
+
+uint32_t MessageLogModule::getLastBellTime()
+{
+    if (externalNotificationModule) {
+        return externalNotificationModule->getLastBellTime();
+    }
+    return 0; // No bell received or module not available
+}
+
+bool MessageLogModule::hasBellBeenReceived()
+{
+    if (externalNotificationModule) {
+        return externalNotificationModule->hasBellBeenReceived();
+    }
+    return false; // No bell received or module not available
+}
+
+bool MessageLogModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, meshtastic_AdminMessage *r)
+{
+    // Only handle admin messages for message log retrieval
+    if (mp.decoded.portnum != meshtastic_PortNum_ADMIN_APP) {
+        return false;
+    }
+    
+    // Check if this is a message log command
+    // For now, we'll use a simple convention: admin messages with specific payload patterns
+    // In a full implementation, you'd define custom protobuf messages
+    
+    LOG_DEBUG("Received admin message for message log");
+    
+    // Parse the command from the admin message
+    // This is a simplified implementation - in practice you'd want proper protobuf definitions
+    
+    return false; // Let other handlers process this message too
+}
+
+int32_t MessageLogModule::runOnce()
+{
+    // Periodic flush of log buffer
+    if (!logBuffer.empty()) {
+        flushLogBuffer();
+    }
+    
+    return 10 * 1000; // Run every 10 seconds
+}
+
+void MessageLogModule::flushLogBuffer()
+{
+#ifndef FSCom
+    return; // No filesystem available
+#else
+    if (logBuffer.empty()) {
+        return;
+    }
+
+    spiLock->lock();
+
+        // Ensure we have a current log file
+        if (!currentLogFile || !currentLogFile.available()) {
+            if (!createNewLogFile()) {
+                LOG_ERROR("Failed to create log file for flushing");
+#ifdef FSCom
+                spiLock->unlock();
+#endif
+                return;
+            }
+        }
+
+        // Write each log entry
+        for (const auto& entry : logBuffer) {
+            size_t written = currentLogFile.write((uint8_t*)&entry, sizeof(MessageLogEntry));
+            if (written != sizeof(MessageLogEntry)) {
+                LOG_ERROR("Failed to write log entry to file");
+                break;
+            }
+            currentLogFileSize += sizeof(MessageLogEntry);
+        }
+
+        // Sync to ensure data is written
+        currentLogFile.flush();
+
+        LOG_DEBUG("Flushed %d log entries to file", logBuffer.size());
+        
+        // Clear the buffer
+        logBuffer.clear();
+
+        // Check if we need to rotate to a new file
+        if (currentLogFileSize >= MESSAGE_LOG_MAX_FILE_SIZE) {
+            closeCurrentLogFile();
+            createNewLogFile();
+        }
+
+
+    spiLock->unlock();
+#endif
+}
+
+bool MessageLogModule::createNewLogFile()
+{
+#ifndef FSCom
+    return false;
+#else
+    closeCurrentLogFile();
+
+    // Find next available file index
+    currentLogFileIndex++;
+    
+    char filename[64];
+    snprintf(filename, sizeof(filename), "%s%u.log", MESSAGE_LOG_BASE_FILENAME, currentLogFileIndex);
+
+    currentLogFile = FSCom.open(filename, "w");
+    if (!currentLogFile) {
+        LOG_ERROR("Failed to create log file: %s", filename);
+        return false;
+    }
+
+    currentLogFileSize = 0;
+    LOG_INFO("Created new log file: %s", filename);
+    
+    // Clean up old files if we have too many
+    cleanupOldLogFiles();
+    
+    return true;
+#endif
+}
+
+void MessageLogModule::closeCurrentLogFile()
+{
+#ifdef FSCom
+    if (currentLogFile) {
+        currentLogFile.close();
+        currentLogFile = File(); // Reset to empty File object
+    }
+#endif
+}
+
+void MessageLogModule::initLogDirectory()
+{
+#ifdef FSCom
+    spiLock->lock();
+    
+    // Create logs directory if it doesn't exist
+    struct stat st;
+    if (stat("/logs", &st) != 0) {
+        FSCom.mkdir("/logs");
+        LOG_INFO("Created logs directory");
+    }
+    
+    spiLock->unlock();
+#endif
+}
+
+void MessageLogModule::cleanupOldLogFiles()
+{
+    // Implementation to remove old log files if we exceed MESSAGE_LOG_MAX_FILES
+    // This would involve listing files and removing the oldest ones
+    LOG_DEBUG("Cleanup old log files (placeholder)");
+}
+
+std::vector<std::string> MessageLogModule::getLogFiles()
+{
+    std::vector<std::string> files;
+    
+#ifdef FSCom
+    // Implementation to list log files in directory
+    // This would use FSCom directory listing functions
+#endif
+    
+    return files;
+}
+
+std::vector<MessageLogEntry> MessageLogModule::readLogEntriesFromFile(const std::string& filename, 
+                                                                     uint32_t maxEntries, 
+                                                                     uint32_t skipEntries)
+{
+    std::vector<MessageLogEntry> entries;
+    
+#ifdef FSCom
+    spiLock->lock();
+    
+    auto file = FSCom.open(filename.c_str(), "r");
+    if (file) {
+        // Skip entries if requested
+        file.seek(skipEntries * sizeof(MessageLogEntry));
+        
+        MessageLogEntry entry;
+        uint32_t count = 0;
+        
+        while ((maxEntries == 0 || count < maxEntries) && 
+               file.readBytes((char*)&entry, sizeof(MessageLogEntry)) == sizeof(MessageLogEntry)) {
+            entries.push_back(entry);
+            count++;
+        }
+        
+        file.close();
+    }
+    
+    spiLock->unlock();
+#endif
+    
+    return entries;
+}
+
+MessageLogEntry MessageLogModule::createLogEntry(const meshtastic_MeshPacket &mp, bool isSent, 
+                                                int32_t rxSnr, int32_t rxRssi)
+{
+    MessageLogEntry entry = {};
+    
+    entry.timestamp = getValidTime(RTCQualityFromNet);
+    entry.from = mp.from;
+    entry.to = mp.to;
+    entry.id = mp.id;
+    entry.channel = mp.channel;
+    entry.hop_limit = mp.hop_limit;
+    entry.hop_start = mp.hop_start;
+    entry.is_sent = isSent;
+    entry.want_ack = mp.want_ack;
+    entry.portnum = mp.decoded.portnum;
+    entry.rx_snr = rxSnr;
+    entry.rx_rssi = rxRssi;
+    
+    // Copy payload (truncate if too large)
+    entry.payload_size = std::min((size_t)mp.decoded.payload.size, sizeof(entry.payload));
+    if (entry.payload_size > 0) {
+        memcpy(entry.payload, mp.decoded.payload.bytes, entry.payload_size);
+    }
+    
+    return entry;
+}
+
+const char* MessageLogModule::getMessageTypeString(meshtastic_PortNum portnum)
+{
+    return portNumToString(portnum);
+}
+
+bool MessageLogModule::containsBellCharacter(const meshtastic_MeshPacket &mp)
+{
+    if (mp.decoded.payload.size == 0) {
+        return false;
+    }
+    
+    for (size_t i = 0; i < mp.decoded.payload.size; i++) {
+        if (mp.decoded.payload.bytes[i] == 0x07) { // ASCII bell character
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+uint32_t MessageLogModule::getTotalLogSize()
+{
+    uint32_t totalSize = 0;
+    
+    // Add current buffer size
+    totalSize += logBuffer.size() * sizeof(MessageLogEntry);
+    
+    // Add size of log files on disk
+    auto files = getLogFiles();
+    for (const auto& filename : files) {
+#ifdef FSCom
+        struct stat st;
+        if (stat(filename.c_str(), &st) == 0) {
+            totalSize += st.st_size;
+        }
+#endif
+    }
+    
+    return totalSize;
+}

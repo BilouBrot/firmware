@@ -95,12 +95,16 @@
 #if !MESHTASTIC_EXCLUDE_DROPZONE
 #include "modules/DropzoneModule.h"
 #endif
+#include "modules/MessageLogModule.h"
 
 /**
  * Create module instances here.  If you are adding a new module, you must 'new' it here (or somewhere else)
  */
 void setupModules()
 {
+    // Initialize MessageLogModule early to capture all message traffic
+    messageLogModule = new MessageLogModule();
+
     if (config.device.role != meshtastic_Config_DeviceConfig_Role_REPEATER) {
 #if (HAS_BUTTON || ARCH_PORTDUINO) && !MESHTASTIC_EXCLUDE_INPUTBROKER
         inputBroker = new InputBroker();

@@ -11,6 +11,7 @@
 #include "mesh-pb-constants.h"
 #include "meshUtils.h"
 #include "modules/RoutingModule.h"
+#include "modules/MessageLogModule.h"
 #if !MESHTASTIC_EXCLUDE_MQTT
 #include "mqtt/MQTT.h"
 #endif
@@ -297,6 +298,12 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
         udpHandler->onSend(const_cast<meshtastic_MeshPacket *>(p));
     }
 #endif
+
+    // Log the sent message if MessageLogModule is available
+    extern MessageLogModule *messageLogModule;
+    if (messageLogModule && isFromUs(p)) {
+        messageLogModule->logSentMessage(*p);
+    }
 
     assert(iface); // This should have been detected already in sendLocal (or we just received a packet from outside)
     return iface->send(p);
@@ -621,6 +628,12 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
             printPacket("handleReceived(USER)", p);
         else
             printPacket("handleReceived(REMOTE)", p);
+
+        // Log the received message if MessageLogModule is available
+        extern MessageLogModule *messageLogModule;
+        if (messageLogModule && !isFromUs(p)) {
+            messageLogModule->logReceivedMessage(*p);
+        }
 
         // Neighbor info module is disabled, ignore expensive neighbor info packets
         if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag &&
