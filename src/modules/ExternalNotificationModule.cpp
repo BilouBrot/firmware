@@ -323,7 +323,7 @@ ExternalNotificationModule::ExternalNotificationModule()
     // moduleConfig.external_notification.use_i2s_as_buzzer = true;
 
     // moduleConfig.external_notification.active = true;
-    // moduleConfig.external_notification.alert_bell = 1;
+    moduleConfig.external_notification.alert_bell = 1;
     // moduleConfig.external_notification.output_ms = 1000;
     // moduleConfig.external_notification.output = 4; // RAK4631 IO4
     // moduleConfig.external_notification.output_buzzer = 10; // RAK4631 IO6
@@ -331,7 +331,7 @@ ExternalNotificationModule::ExternalNotificationModule()
     // moduleConfig.external_notification.nag_timeout = 300;
 
     // T-Watch / T-Deck i2s audio as buzzer:
-    // moduleConfig.external_notification.enabled = true;
+    moduleConfig.external_notification.enabled = true;
     // moduleConfig.external_notification.nag_timeout = 300;
     // moduleConfig.external_notification.output_ms = 1000;
     // moduleConfig.external_notification.use_i2s_as_buzzer = true;
