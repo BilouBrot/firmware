@@ -42,6 +42,11 @@ class ExternalNotificationModule : public SinglePortModule, private concurrency:
 
     void stopNow();
 
+    // Custom timer functions for alert bell
+    uint32_t getTimeSinceLastBell() { return millis() - alertBellTimerStart; }
+    uint32_t getLastBellTime() { return alertBellTimerStart; }
+    bool hasBellBeenReceived() { return alertBellTimerStart > 0; }
+
     void handleGetRingtone(const meshtastic_MeshPacket &req, meshtastic_AdminMessage *response);
     void handleSetRingtone(const char *from_msg);
 
@@ -59,6 +64,9 @@ class ExternalNotificationModule : public SinglePortModule, private concurrency:
     bool isNagging = false;
 
     bool isMuted = false;
+
+    // Custom timer to track when alert bell was received
+    uint32_t alertBellTimerStart = 0;
 
     virtual AdminMessageHandleResult handleAdminMessageForModule(const meshtastic_MeshPacket &mp,
                                                                  meshtastic_AdminMessage *request,

@@ -323,7 +323,7 @@ ExternalNotificationModule::ExternalNotificationModule()
     // moduleConfig.external_notification.use_i2s_as_buzzer = true;
 
     // moduleConfig.external_notification.active = true;
-    moduleConfig.external_notification.alert_bell = 1;
+    // moduleConfig.external_notification.alert_bell = 1;
     // moduleConfig.external_notification.output_ms = 1000;
     // moduleConfig.external_notification.output = 4; // RAK4631 IO4
     // moduleConfig.external_notification.output_buzzer = 10; // RAK4631 IO6
@@ -426,6 +426,12 @@ ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshP
                 if (p.payload.bytes[i] == ASCII_BELL) {
                     containsBell = true;
                 }
+            }
+
+            // Reset custom timer when bell character is received
+            if (containsBell) {
+                alertBellTimerStart = millis();
+                LOG_DEBUG("Custom timer reset: Bell received at %u ms", alertBellTimerStart);
             }
 
             if (moduleConfig.external_notification.alert_bell) {
