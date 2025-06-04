@@ -65,6 +65,11 @@ void MessageLogModule::logSentMessage(const meshtastic_MeshPacket &mp)
 #ifndef FSCom
     return; // No filesystem available
 #else
+    if (!hasBellBeenReceived()) {
+        LOG_DEBUG("No bell received, skipping logging for sent message");
+        return; // Skip logging if no bell has been received
+    }
+
     MessageLogEntry entry = createLogEntry(mp, true);
     logBuffer.push_back(entry);
     sentMessageCount++;
@@ -91,6 +96,11 @@ void MessageLogModule::logReceivedMessage(const meshtastic_MeshPacket &mp, int32
 #ifndef FSCom
     return; // No filesystem available
 #else
+    if (!hasBellBeenReceived()) {
+        LOG_DEBUG("No bell received, skipping logging for received message");
+        return; // Skip logging if no bell has been received
+    }
+
     MessageLogEntry entry = createLogEntry(mp, false, rxSnr, rxRssi);
     logBuffer.push_back(entry);
     receivedMessageCount++;
@@ -327,7 +337,7 @@ MessageLogEntry MessageLogModule::createLogEntry(const meshtastic_MeshPacket &mp
 {
     MessageLogEntry entry = {};
     
-    entry.timestamp = getValidTime(RTCQualityFromNet);
+    entry.timestamp = getTimeSinceLastBell();
     entry.from = mp.from;
     entry.to = mp.to;
     entry.id = mp.id;
