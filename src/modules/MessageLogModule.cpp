@@ -10,6 +10,7 @@
 #include "ExternalNotificationModule.h"
 #include "FSCommon.h"
 #include <sys/stat.h>
+#include "NodeDB.h"
 
 #ifdef FSCom
 #include "SPILock.h"
@@ -487,6 +488,9 @@ void MessageLogModule::printAllLogEntries()
 {
     #ifdef FSCom
         spiLock->lock();
+
+        // Print statistics
+        LOG_INFO("ID:%u", nodeDB->getNodeNum());
         
         // Print buffer entries first
         for (const auto& entry : logBuffer) {
