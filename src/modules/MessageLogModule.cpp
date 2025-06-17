@@ -70,17 +70,6 @@ void MessageLogModule::logSentMessage(const meshtastic_MeshPacket &mp)
         return; // Skip logging if no bell has been received
     }
 
-    // Check if message contains bell character
-    if (containsBellCharacter(mp)) {
-        bellMessageCount++;
-        LOG_DEBUG("Sent message contains bell character");
-    }
-
-    if (!isImportantMessage(mp)) {
-        LOG_DEBUG("Skipping non-important message: from=0x%08x, to=0x%08x, id=0x%08x, port=%s", 
-                  mp.from, mp.to, mp.id, portNumToString(mp.decoded.portnum));
-        return; // Skip logging if message is not important
-    }
 
     MessageLogEntry entry = createLogEntry(mp, true);
     logBuffer.push_back(entry);
@@ -90,6 +79,12 @@ void MessageLogModule::logSentMessage(const meshtastic_MeshPacket &mp)
     LOG_DEBUG("Logged sent message: from=0x%08x, to=0x%08x, id=0x%08x, port=%s", 
               mp.from, mp.to, mp.id, portNumToString(mp.decoded.portnum));
     
+    // Check if message contains bell character
+    if (containsBellCharacter(mp)) {
+        bellMessageCount++;
+        LOG_DEBUG("Sent message contains bell character");
+    }
+              
     // Flush if buffer is full
     if (logBuffer.size() >= MESSAGE_LOG_BUFFER_SIZE) {
         LOG_INFO("(Rec) Current log buffer size: %d, flushing to file", logBuffer.size());
@@ -435,8 +430,8 @@ MessageLogEntry MessageLogModule::createLogEntry(const meshtastic_MeshPacket &mp
     entry.is_sent = isSent;
     entry.want_ack = mp.want_ack;
     entry.portnum = mp.decoded.portnum;
-    entry.rx_snr = rxSnr;
-    entry.rx_rssi = rxRssi;
+    entry.rx_snr = mp.rx_snr;
+    entry.rx_rssi = mp.rx_rssi;
     
     // Copy payload (truncate if too large)
     entry.payload_size = std::min((size_t)mp.decoded.payload.size, sizeof(entry.payload));
