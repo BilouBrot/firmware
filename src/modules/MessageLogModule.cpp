@@ -70,6 +70,18 @@ void MessageLogModule::logSentMessage(const meshtastic_MeshPacket &mp)
         return; // Skip logging if no bell has been received
     }
 
+    // Check if message contains bell character
+    if (containsBellCharacter(mp)) {
+        bellMessageCount++;
+        LOG_DEBUG("Sent message contains bell character");
+    }
+
+    if (!isImportantMessage(mp)) {
+        LOG_DEBUG("Skipping non-important message: from=0x%08x, to=0x%08x, id=0x%08x, port=%s", 
+                  mp.from, mp.to, mp.id, portNumToString(mp.decoded.portnum));
+        return; // Skip logging if message is not important
+    }
+
     MessageLogEntry entry = createLogEntry(mp, true);
     logBuffer.push_back(entry);
     sentMessageCount++;
@@ -77,12 +89,6 @@ void MessageLogModule::logSentMessage(const meshtastic_MeshPacket &mp)
     
     LOG_DEBUG("Logged sent message: from=0x%08x, to=0x%08x, id=0x%08x, port=%s", 
               mp.from, mp.to, mp.id, portNumToString(mp.decoded.portnum));
-    
-    // Check if message contains bell character
-    if (containsBellCharacter(mp)) {
-        bellMessageCount++;
-        LOG_DEBUG("Sent message contains bell character");
-    }
     
     // Flush if buffer is full
     if (logBuffer.size() >= MESSAGE_LOG_BUFFER_SIZE) {
@@ -169,6 +175,12 @@ bool MessageLogModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, m
 
 int32_t MessageLogModule::runOnce()
 {
+
+    if (!hasBellBeenReceived()) {
+        // print old log entries if any
+        printAllLogEntries();
+    }
+
     // Periodic flush of log buffer
     if (!logBuffer.empty()) {
         LOG_INFO("Periodic flush of log buffer, size: %d", logBuffer.size());
@@ -474,4 +486,46 @@ uint32_t MessageLogModule::getTotalLogSize()
     }
     
     return totalSize;
+}
+
+void MessageLogModule::printAllLogEntries()
+{
+    #ifdef FSCom
+        spiLock->lock();
+        
+        // Print buffer entries first
+        for (const auto& entry : logBuffer) {
+            LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%u,%u",
+                     entry.timestamp, entry.from, entry.to, entry.id, entry.channel,
+                     entry.hop_limit, entry.hop_start, entry.is_sent ? 1 : 0,
+                     entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi);
+        }
+        
+        // Print entries from all log files
+        auto files = getLogFiles();
+        for (const auto& filename : files) {
+            auto file = FSCom.open(filename.c_str(), "r");
+            if (file) {
+                MessageLogEntry entry;
+                while (file.readBytes((char*)&entry, sizeof(MessageLogEntry)) == sizeof(MessageLogEntry)) {
+                    LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%u,%u",
+                             entry.timestamp, entry.from, entry.to, entry.id, entry.channel,
+                             entry.hop_limit, entry.hop_start, entry.is_sent ? 1 : 0,
+                             entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi);
+                }
+                file.close();
+            }
+        }
+        
+        spiLock->unlock();
+    #else
+        LOG_INFO("LOG: Filesystem not available");
+    #endif
+}
+
+bool MessageLogModule::isImportantMessage(const meshtastic_MeshPacket &mp)
+{
+    return (mp.decoded.portnum == meshtastic_PortNum_POSITION_APP || 
+            mp.decoded.portnum == meshtastic_PortNum_NODEINFO_APP || 
+            mp.decoded.portnum == meshtastic_PortNum_TELEMETRY_APP);
 }

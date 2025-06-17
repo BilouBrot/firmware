@@ -151,6 +151,12 @@ private:
     
     /** Get total size of all log files */
     uint32_t getTotalLogSize();
+
+    /** prints all log entries */
+    void printAllLogEntries();
+
+    /** Check if message is important (e.g., POSITION, NODEINFO, TELEMETRY) */
+    bool isImportantMessage(const meshtastic_MeshPacket &mp);
 };
 
 extern MessageLogModule *messageLogModule;
