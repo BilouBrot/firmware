@@ -430,8 +430,8 @@ MessageLogEntry MessageLogModule::createLogEntry(const meshtastic_MeshPacket &mp
     entry.is_sent = isSent;
     entry.want_ack = mp.want_ack;
     entry.portnum = mp.decoded.portnum;
-    entry.rx_snr = mp.rx_snr;
-    entry.rx_rssi = mp.rx_rssi;
+    entry.rx_snr = rxSnr;
+    entry.rx_rssi = rxRssi;
     
     // Copy payload (truncate if too large)
     entry.payload_size = std::min((size_t)mp.decoded.payload.size, sizeof(entry.payload));
