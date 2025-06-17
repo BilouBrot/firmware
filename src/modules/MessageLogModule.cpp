@@ -86,6 +86,7 @@ void MessageLogModule::logSentMessage(const meshtastic_MeshPacket &mp)
     
     // Flush if buffer is full
     if (logBuffer.size() >= MESSAGE_LOG_BUFFER_SIZE) {
+        LOG_INFO("(Rec) Current log buffer size: %d, flushing to file", logBuffer.size());
         flushLogBuffer();
     }
 #endif
@@ -117,6 +118,7 @@ void MessageLogModule::logReceivedMessage(const meshtastic_MeshPacket &mp, int32
     
     // Flush if buffer is full
     if (logBuffer.size() >= MESSAGE_LOG_BUFFER_SIZE) {
+        LOG_INFO("(Sent) Current log buffer size: %d, flushing to file", logBuffer.size());
         flushLogBuffer();
     }
 #endif
@@ -169,6 +171,7 @@ int32_t MessageLogModule::runOnce()
 {
     // Periodic flush of log buffer
     if (!logBuffer.empty()) {
+        LOG_INFO("Periodic flush of log buffer, size: %d", logBuffer.size());
         flushLogBuffer();
     }
     
@@ -187,7 +190,8 @@ void MessageLogModule::flushLogBuffer()
     spiLock->lock();
 
         // Ensure we have a current log file
-        if (!currentLogFile || !currentLogFile.available()) {
+        if (!currentLogFile) { 
+            LOG_INFO("Current log file is not valid/open, creating new log file");
             if (!createNewLogFile()) {
                 LOG_ERROR("Failed to create log file for flushing");
 #ifdef FSCom
@@ -201,8 +205,12 @@ void MessageLogModule::flushLogBuffer()
         for (const auto& entry : logBuffer) {
             size_t written = currentLogFile.write((uint8_t*)&entry, sizeof(MessageLogEntry));
             if (written != sizeof(MessageLogEntry)) {
-                LOG_ERROR("Failed to write log entry to file");
-                break;
+                LOG_ERROR("Failed to write log entry to file. Attempted: %d, Written: %d", sizeof(MessageLogEntry), written);
+                closeCurrentLogFile(); 
+#ifdef FSCom
+                spiLock->unlock();
+#endif
+                return; 
             }
             currentLogFileSize += sizeof(MessageLogEntry);
         }
@@ -217,10 +225,10 @@ void MessageLogModule::flushLogBuffer()
 
         // Check if we need to rotate to a new file
         if (currentLogFileSize >= MESSAGE_LOG_MAX_FILE_SIZE) {
+            LOG_INFO("Current log file size exceeded limit (%u >= %u), rotating file", currentLogFileSize, MESSAGE_LOG_MAX_FILE_SIZE);
             closeCurrentLogFile();
             createNewLogFile();
         }
-
 
     spiLock->unlock();
 #endif
@@ -232,6 +240,11 @@ bool MessageLogModule::createNewLogFile()
     return false;
 #else
     closeCurrentLogFile();
+
+    if (currentLogFileIndex == 0) {
+        LOG_INFO("Starting fresh log file index");
+        deleteAllLogFiles(); // Reset index if we are starting fresh
+    }
 
     // Find next available file index
     currentLogFileIndex++;
@@ -288,13 +301,76 @@ void MessageLogModule::cleanupOldLogFiles()
     LOG_DEBUG("Cleanup old log files (placeholder)");
 }
 
+void MessageLogModule::deleteAllLogFiles()
+{
+#ifdef FSCom
+    LOG_INFO("Deleting all log files");
+    auto files = getLogFiles();
+    for (const auto& filename : files) {
+        if (FSCom.remove(filename.c_str())) {
+            LOG_INFO("Deleted log file: %s", filename.c_str());
+        } else {
+            LOG_ERROR("Failed to delete log file: %s", filename.c_str());
+        }
+    }
+    logBuffer.clear();
+    currentLogFileIndex = 0;
+    currentLogFileSize = 0;
+    totalMessagesLogged = 0;
+    sentMessageCount = 0;
+    receivedMessageCount = 0;
+    bellMessageCount = 0;
+    closeCurrentLogFile();
+#endif
+}
+
 std::vector<std::string> MessageLogModule::getLogFiles()
 {
     std::vector<std::string> files;
     
 #ifdef FSCom
-    // Implementation to list log files in directory
-    // This would use FSCom directory listing functions
+    const char* logDirPath = "/logs";
+    File dir = FSCom.open(logDirPath, "r");
+
+    if (!dir) {
+        LOG_ERROR("Failed to open log directory: %s", logDirPath);
+        spiLock->unlock();
+        return files;
+    }
+
+    if (!dir.isDirectory()) {
+        LOG_ERROR("Log path is not a directory: %s", logDirPath);
+        dir.close();
+        spiLock->unlock();
+        return files;
+    }
+
+    LOG_INFO("Scanning log directory: %s", logDirPath);
+    File entry = dir.openNextFile();
+    while (entry) {
+        if (!entry.isDirectory()) {
+            const char* entryNameCStr = entry.name(); 
+            if (entryNameCStr) {
+                std::string entryName(entryNameCStr);
+                
+                const std::string prefix = "msg_log_";
+                const std::string suffix = ".log";
+
+                if (entryName.rfind(prefix, 0) == 0 &&
+                    entryName.length() >= prefix.length() + suffix.length() && 
+                    entryName.substr(entryName.length() - suffix.length()) == suffix) 
+                {
+                    std::string fullPath = std::string(logDirPath) + "/" + entryName;
+                    files.push_back(fullPath);
+                    LOG_DEBUG("Found log file: %s", fullPath.c_str());
+                }
+            }
+        }
+        entry.close(); 
+        entry = dir.openNextFile();
+    }
+
+    dir.close(); 
 #endif
     
     return files;

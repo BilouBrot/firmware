@@ -145,6 +145,9 @@ private:
     
     /** Clean up old log files if too many exist */
     void cleanupOldLogFiles();
+
+    /** Delete all log files */
+    void deleteAllLogFiles();
     
     /** Get total size of all log files */
     uint32_t getTotalLogSize();
