@@ -489,6 +489,9 @@ void MessageLogModule::printAllLogEntries()
     #ifdef FSCom
         spiLock->lock();
 
+        //start
+        LOG_INFO("==LOGSTART==");
+
         // Print statistics
         LOG_INFO("ID:%u", nodeDB->getNodeNum());
         
@@ -515,6 +518,9 @@ void MessageLogModule::printAllLogEntries()
                 file.close();
             }
         }
+
+        //end
+        LOG_INFO("==LOGEND==");
         
         spiLock->unlock();
     #else
