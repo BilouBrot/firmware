@@ -337,8 +337,6 @@ std::vector<std::string> MessageLogModule::getLogFiles()
     std::vector<std::string> files;
     
 #ifdef FSCom
-    spiLock->lock();
-
     const char* logDirPath = "/logs";
     File dir = FSCom.open(logDirPath, "r");
 
@@ -381,7 +379,6 @@ std::vector<std::string> MessageLogModule::getLogFiles()
     }
 
     dir.close(); 
-    spiLock->unlock();
 #endif
     
     return files;
@@ -505,6 +502,8 @@ void MessageLogModule::printAllLogEntries()
                      entry.hop_limit, entry.hop_start, entry.is_sent ? 1 : 0,
                      entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi);
         }
+
+        LOG_INFO("Buffer size: %d", logBuffer.size());
         
         // Print entries from all log files
         auto files = getLogFiles();
