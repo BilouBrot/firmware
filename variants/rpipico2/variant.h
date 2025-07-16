@@ -24,21 +24,23 @@
 
 #define USE_SX1262
 
+#undef HW_SPI1_DEVICE
+
 #undef LORA_SCK
 #undef LORA_MISO
 #undef LORA_MOSI
 #undef LORA_CS
 
-#define LORA_SCK 10
-#define LORA_MISO 12
-#define LORA_MOSI 11
-#define LORA_CS 3
+#define LORA_SCK 18
+#define LORA_MISO 16
+#define LORA_MOSI 19
+#define LORA_CS 17
 
-#define LORA_DIO0 RADIOLIB_NC
-#define LORA_RESET 15
-#define LORA_DIO1 20
-#define LORA_DIO2 2
-#define LORA_DIO3 RADIOLIB_NC
+#define LORA_DIO0 7
+#define LORA_RESET 12
+#define LORA_DIO1 10
+#define LORA_DIO2 6
+#define LORA_DIO3 7
 
 #ifdef USE_SX1262
 #define SX126X_CS LORA_CS
