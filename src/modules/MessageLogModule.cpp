@@ -504,6 +504,17 @@ void MessageLogModule::printAllLogEntries()
         }
 
         LOG_INFO("Buffer size: %d", logBuffer.size());
+
+                // Try to create logs directory if it doesn't exist
+        struct stat st;
+        if (stat("/logs", &st) != 0) {
+            LOG_INFO("Logs directory doesn't exist, creating it");
+            if (FSCom.mkdir("/logs")) {
+                LOG_INFO("Created logs directory");
+            } else {
+                LOG_ERROR("Failed to create logs directory");
+            }
+        }
         
         // Print entries from all log files
         auto files = getLogFiles();
