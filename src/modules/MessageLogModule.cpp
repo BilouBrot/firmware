@@ -45,22 +45,6 @@ MessageLogModule::MessageLogModule()
     logBuffer.reserve(MESSAGE_LOG_BUFFER_SIZE);
 }
 
-void MessageLogModule::init()
-{
-    LOG_INFO("Initializing Message Log Module");
-    
-    // Initialize log directory
-    initLogDirectory();
-    
-    // Create initial log file
-    createNewLogFile();
-    
-    // Set thread interval to 10 seconds for periodic flushing
-    setInterval(10 * 1000);
-    
-    LOG_INFO("Message Log Module initialized");
-}
-
 void MessageLogModule::logSentMessage(const meshtastic_MeshPacket &mp)
 {
 #ifndef FSCom
@@ -171,6 +155,19 @@ bool MessageLogModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, m
 
 int32_t MessageLogModule::runOnce()
 {
+
+    if (firstTime) {
+        firstTime = false;
+        LOG_INFO("Initializing Message Log Module");
+
+        // Initialize log directory
+        initLogDirectory();
+        
+        // Create initial log file
+        createNewLogFile();
+        
+        LOG_INFO("Message Log Module initialized");
+    }
 
     if (!hasBellBeenReceived()) {
         // print old log entries if any
@@ -501,19 +498,6 @@ void MessageLogModule::printAllLogEntries()
                      entry.timestamp, entry.from, entry.to, entry.id, entry.channel,
                      entry.hop_limit, entry.hop_start, entry.is_sent ? 1 : 0,
                      entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi);
-        }
-
-        LOG_INFO("Buffer size: %d", logBuffer.size());
-
-                // Try to create logs directory if it doesn't exist
-        struct stat st;
-        if (stat("/logs", &st) != 0) {
-            LOG_INFO("Logs directory doesn't exist, creating it");
-            if (FSCom.mkdir("/logs")) {
-                LOG_INFO("Created logs directory");
-            } else {
-                LOG_ERROR("Failed to create logs directory");
-            }
         }
         
         // Print entries from all log files

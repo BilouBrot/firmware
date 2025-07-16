@@ -77,12 +77,11 @@ class MessageLogModule : public ProtobufModule<meshtastic_AdminMessage>,
     /// File handle for current log file
     File currentLogFile;
 
+    bool firstTime = 1;
+
 public:
     /** Constructor */
     MessageLogModule();
-    
-    /** Initialize the module */
-    void init();
     
     /** Log a sent message */
     void logSentMessage(const meshtastic_MeshPacket &mp);
