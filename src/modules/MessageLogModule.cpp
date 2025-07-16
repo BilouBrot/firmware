@@ -337,6 +337,8 @@ std::vector<std::string> MessageLogModule::getLogFiles()
     std::vector<std::string> files;
     
 #ifdef FSCom
+    spiLock->lock();
+
     const char* logDirPath = "/logs";
     File dir = FSCom.open(logDirPath, "r");
 
@@ -379,6 +381,7 @@ std::vector<std::string> MessageLogModule::getLogFiles()
     }
 
     dir.close(); 
+    spiLock->unlock();
 #endif
     
     return files;
