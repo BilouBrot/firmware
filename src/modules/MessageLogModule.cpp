@@ -163,9 +163,6 @@ int32_t MessageLogModule::runOnce()
         // Initialize log directory
         initLogDirectory();
         
-        // Create initial log file
-        createNewLogFile();
-        
         LOG_INFO("Message Log Module initialized");
     }
 
