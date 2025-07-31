@@ -33,8 +33,8 @@ typedef struct {
     meshtastic_PortNum portnum; // Port number (message type)
     uint8_t payload_size;       // Size of payload in bytes
     uint8_t payload[256];       // Message payload (truncated if larger)
-    int32_t rx_snr;             // Signal-to-noise ratio (for received messages)
-    int32_t rx_rssi;            // Signal strength (for received messages)
+    int32_t rx_snr;             // Signal-to-noise ratio (for received messages, -999 for sent messages)
+    int32_t rx_rssi;            // Signal strength (for received messages, -999 for sent messages)
 } MessageLogEntry;
 
 /**

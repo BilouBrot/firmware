@@ -56,7 +56,7 @@ void MessageLogModule::logSentMessage(const meshtastic_MeshPacket &mp)
     }
 
 
-    MessageLogEntry entry = createLogEntry(mp, true);
+    MessageLogEntry entry = createLogEntry(mp, true, -999, -999); // Use -999 to indicate N/A for sent messages
     logBuffer.push_back(entry);
     sentMessageCount++;
     totalMessagesLogged++;

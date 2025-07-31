@@ -632,7 +632,7 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
         // Log the received message if MessageLogModule is available
         extern MessageLogModule *messageLogModule;
         if (messageLogModule && !isFromUs(p)) {
-            messageLogModule->logReceivedMessage(*p);
+            messageLogModule->logReceivedMessage(*p, p->rx_snr, p->rx_rssi);
         }
 
         // Neighbor info module is disabled, ignore expensive neighbor info packets
