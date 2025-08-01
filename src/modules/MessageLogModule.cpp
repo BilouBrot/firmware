@@ -491,7 +491,7 @@ void MessageLogModule::printAllLogEntries()
         
         // Print buffer entries first
         for (const auto& entry : logBuffer) {
-            LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%u,%u",
+            LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d",
                      entry.timestamp, entry.from, entry.to, entry.id, entry.channel,
                      entry.hop_limit, entry.hop_start, entry.is_sent ? 1 : 0,
                      entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi);
@@ -504,7 +504,7 @@ void MessageLogModule::printAllLogEntries()
             if (file) {
                 MessageLogEntry entry;
                 while (file.readBytes((char*)&entry, sizeof(MessageLogEntry)) == sizeof(MessageLogEntry)) {
-                    LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%u,%u",
+                    LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d",
                              entry.timestamp, entry.from, entry.to, entry.id, entry.channel,
                              entry.hop_limit, entry.hop_start, entry.is_sent ? 1 : 0,
                              entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi);
