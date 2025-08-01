@@ -510,6 +510,13 @@ void MessageLogModule::printAllLogEntries()
         // Print statistics
         LOG_INFO("ID:%u", nodeDB->getNodeNum());
         
+        // Print MAC address, long name, and short name
+        LOG_INFO("MAC:%02x:%02x:%02x:%02x:%02x:%02x", 
+                 owner.macaddr[0], owner.macaddr[1], owner.macaddr[2], 
+                 owner.macaddr[3], owner.macaddr[4], owner.macaddr[5]);
+        LOG_INFO("LONG_NAME:%s", owner.long_name);
+        LOG_INFO("SHORT_NAME:%s", owner.short_name);
+        
         // Print buffer entries first
         for (const auto& entry : logBuffer) {
             LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d,%u,%.2f,%.2f",
