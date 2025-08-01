@@ -36,6 +36,8 @@ typedef struct {
     int32_t rx_snr;             // Signal-to-noise ratio (for received messages, -999 for sent messages)
     int32_t rx_rssi;            // Signal strength (for received messages, -999 for sent messages)
     uint32_t packet_size;       // Total packet size including header and payload
+    float channel_utilization;  // Channel utilization percentage at time of message
+    float tx_utilization;       // TX utilization percentage at time of message
 } MessageLogEntry;
 
 /**

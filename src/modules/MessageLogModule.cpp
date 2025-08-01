@@ -10,6 +10,7 @@
 #include "ExternalNotificationModule.h"
 #include "FSCommon.h"
 #include "RadioInterface.h"
+#include "airtime.h"
 #include <sys/stat.h>
 #include "NodeDB.h"
 
@@ -439,6 +440,15 @@ MessageLogEntry MessageLogModule::createLogEntry(const meshtastic_MeshPacket &mp
         entry.packet_size = mp.decoded.payload.size + sizeof(PacketHeader);
     }
     
+    // Capture channel utilization at time of message
+    if (airTime) {
+        entry.channel_utilization = airTime->channelUtilizationPercent();
+        entry.tx_utilization = airTime->utilizationTXPercent();
+    } else {
+        entry.channel_utilization = -1.0f; // Indicate unavailable
+        entry.tx_utilization = -1.0f;      // Indicate unavailable
+    }
+    
     // Copy payload (truncate if too large)
     entry.payload_size = std::min((size_t)mp.decoded.payload.size, sizeof(entry.payload));
     if (entry.payload_size > 0) {
@@ -502,10 +512,11 @@ void MessageLogModule::printAllLogEntries()
         
         // Print buffer entries first
         for (const auto& entry : logBuffer) {
-            LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d,%u",
+            LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d,%u,%.2f,%.2f",
                      entry.timestamp, entry.from, entry.to, entry.id, entry.channel,
                      entry.hop_limit, entry.hop_start, entry.is_sent ? 1 : 0,
-                     entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi, entry.packet_size);
+                     entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi, entry.packet_size,
+                     entry.channel_utilization, entry.tx_utilization);
         }
         
         // Print entries from all log files
@@ -515,10 +526,11 @@ void MessageLogModule::printAllLogEntries()
             if (file) {
                 MessageLogEntry entry;
                 while (file.readBytes((char*)&entry, sizeof(MessageLogEntry)) == sizeof(MessageLogEntry)) {
-                    LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d,%u",
+                    LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d,%u,%.2f,%.2f",
                              entry.timestamp, entry.from, entry.to, entry.id, entry.channel,
                              entry.hop_limit, entry.hop_start, entry.is_sent ? 1 : 0,
-                             entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi, entry.packet_size);
+                             entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi, entry.packet_size,
+                             entry.channel_utilization, entry.tx_utilization);
                 }
                 file.close();
             }
