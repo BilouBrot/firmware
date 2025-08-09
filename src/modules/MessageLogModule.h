@@ -24,9 +24,9 @@ struct ExperimentPhase {
 };
 
 static constexpr ExperimentPhase EXPERIMENT_PHASES[] = {
-    {4 * 60, 60},  // Phase 1: 4 minutes, 60s interval
-    {3 * 60, 30},  // Phase 2: 3 minutes, 30s interval
-    {2 * 60, 20}   // Phase 3: 2 minutes, 20s interval
+    {8 * 60 * 60, 5 * 60},  // Phase 1: 8 hours, 5 minutes interval
+    {2 * 60 * 60, 60},  // Phase 2: 2 hours, 1 minute interval
+    {60 * 60, 15}   // Phase 3: 1 hour, 15 seconds interval
 };
 
 static constexpr size_t EXPERIMENT_PHASE_COUNT = sizeof(EXPERIMENT_PHASES) / sizeof(EXPERIMENT_PHASES[0]);

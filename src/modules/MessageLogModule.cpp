@@ -572,7 +572,7 @@ void MessageLogModule::startExperimentPhases()
         return; // Skip if no bell has been received
     }
 
-    uint32_t cooldownDuration = 1 * 60; // 5 minutes cooldown between phases in seconds
+    uint32_t cooldownDuration = 30 * 60; // 30 minutes cooldown between phases in seconds
     uint32_t timeSinceStart = getTimeSinceLastBell();
 
     // Convert everything to milliseconds for consistent comparison
@@ -580,7 +580,7 @@ void MessageLogModule::startExperimentPhases()
     uint32_t phase2Duration = EXPERIMENT_PHASES[1].duration_seconds * 1000;
     uint32_t cooldownDurationMs = cooldownDuration * 1000;
 
-    uint32_t setupEnd = 1 * 60 * 1000; // 1 hour setup phase in milliseconds
+    uint32_t setupEnd = 60 * 60 * 1000; // 1 hour setup phase in milliseconds
     uint32_t phase1End = phase1Duration + setupEnd;
     uint32_t cooldown1End = phase1End + cooldownDurationMs;
     uint32_t phase2End = cooldown1End + phase2Duration;
