@@ -580,7 +580,8 @@ void MessageLogModule::startExperimentPhases()
     uint32_t phase2Duration = EXPERIMENT_PHASES[1].duration_seconds * 1000;
     uint32_t cooldownDurationMs = cooldownDuration * 1000;
 
-    uint32_t phase1End = phase1Duration;
+    uint32_t setupEnd = 1 * 60 * 1000; // 1 hour setup phase in milliseconds
+    uint32_t phase1End = phase1Duration + setupEnd;
     uint32_t cooldown1End = phase1End + cooldownDurationMs;
     uint32_t phase2End = cooldown1End + phase2Duration;
     uint32_t cooldown2End = phase2End + cooldownDurationMs;
@@ -601,10 +602,14 @@ void MessageLogModule::startExperimentPhases()
         // Cooldown between Phase 1 and Phase 2
         LOG_INFO("Currently in Cooldown period between Phase 1 and Phase 2 of the experiment");
         moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[0].send_interval_seconds + cooldownDuration;
-    } else {
+    } else if (timeSinceStart > setupEnd) {
         // Phase 1
         LOG_INFO("Currently in Phase 1 of the experiment");
         moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[0].send_interval_seconds;
+    } else {
+        // Setup phase
+        LOG_INFO("Currently in Setup phase of the experiment");
+        moduleConfig.telemetry.environment_update_interval = setupEnd / 1000; // Convert back to seconds
     }
 
 }
