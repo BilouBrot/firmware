@@ -429,7 +429,7 @@ ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshP
             }
 
             // Reset custom timer when bell character is received
-            if (containsBell) {
+            if (containsBell && alertBellTimerStart == 0) {
                 alertBellTimerStart = millis();
                 LOG_DEBUG("Custom timer reset: Bell received at %u ms", alertBellTimerStart);
             }

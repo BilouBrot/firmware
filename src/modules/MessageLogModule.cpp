@@ -572,14 +572,35 @@ void MessageLogModule::startExperimentPhases()
         return; // Skip if no bell has been received
     }
 
-    if (getTimeSinceLastBell() > EXPERIMENT_PHASES[0].duration_seconds * 1000 + EXPERIMENT_PHASES[1].duration_seconds * 1000) {
+    uint32_t cooldownDuration = 1 * 60; // 5 minutes cooldown between phases in seconds
+    uint32_t timeSinceStart = getTimeSinceLastBell();
+
+    // Convert everything to milliseconds for consistent comparison
+    uint32_t phase1Duration = EXPERIMENT_PHASES[0].duration_seconds * 1000;
+    uint32_t phase2Duration = EXPERIMENT_PHASES[1].duration_seconds * 1000;
+    uint32_t cooldownDurationMs = cooldownDuration * 1000;
+
+    uint32_t phase1End = phase1Duration;
+    uint32_t cooldown1End = phase1End + cooldownDurationMs;
+    uint32_t phase2End = cooldown1End + phase2Duration;
+    uint32_t cooldown2End = phase2End + cooldownDurationMs;
+
+    if (timeSinceStart > cooldown2End) {
         // Phase 3
         LOG_INFO("Currently in Phase 3 of the experiment");
         moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[2].send_interval_seconds;
-    } else if (getTimeSinceLastBell() > EXPERIMENT_PHASES[0].duration_seconds * 1000) {
+    } else if (timeSinceStart > phase2End) {
+        // Cooldown between Phase 2 and Phase 3
+        LOG_INFO("Currently in Cooldown period between Phase 2 and Phase 3 of the experiment");
+        moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[1].send_interval_seconds + cooldownDuration;
+    } else if (timeSinceStart > cooldown1End) {
         // Phase 2
         LOG_INFO("Currently in Phase 2 of the experiment");
         moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[1].send_interval_seconds;
+    } else if (timeSinceStart > phase1End) {
+        // Cooldown between Phase 1 and Phase 2
+        LOG_INFO("Currently in Cooldown period between Phase 1 and Phase 2 of the experiment");
+        moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[0].send_interval_seconds + cooldownDuration;
     } else {
         // Phase 1
         LOG_INFO("Currently in Phase 1 of the experiment");
