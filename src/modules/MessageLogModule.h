@@ -17,6 +17,21 @@
 // Base filename for log files
 #define MESSAGE_LOG_BASE_FILENAME "/logs/msg_log_"
 
+// Experiment phase configuration
+struct ExperimentPhase {
+    uint32_t duration_seconds;
+    uint32_t send_interval_seconds;
+};
+
+static constexpr ExperimentPhase EXPERIMENT_PHASES[] = {
+    {4 * 60, 60},  // Phase 1: 4 minutes, 60s interval
+    {3 * 60, 30},  // Phase 2: 3 minutes, 30s interval
+    {2 * 60, 20}   // Phase 3: 2 minutes, 20s interval
+};
+
+static constexpr size_t EXPERIMENT_PHASE_COUNT = sizeof(EXPERIMENT_PHASES) / sizeof(EXPERIMENT_PHASES[0]);
+
+
 /**
  * Represents a single message log entry
  */
@@ -159,6 +174,9 @@ private:
 
     /** Check if message is important (e.g., POSITION, NODEINFO, TELEMETRY) */
     bool isImportantMessage(const meshtastic_MeshPacket &mp);
+
+    /** Start Phases of the Expirement */
+    void startExperimentPhases();
 };
 
 extern MessageLogModule *messageLogModule;

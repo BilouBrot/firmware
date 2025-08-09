@@ -171,6 +171,8 @@ int32_t MessageLogModule::runOnce()
     if (!hasBellBeenReceived()) {
         // print old log entries if any
         printAllLogEntries();
+    } else {
+        startExperimentPhases();
     }
 
     // Periodic flush of log buffer
@@ -557,4 +559,27 @@ bool MessageLogModule::isImportantMessage(const meshtastic_MeshPacket &mp)
     return (mp.decoded.portnum == meshtastic_PortNum_POSITION_APP || 
             mp.decoded.portnum == meshtastic_PortNum_NODEINFO_APP || 
             mp.decoded.portnum == meshtastic_PortNum_TELEMETRY_APP);
+}
+
+void MessageLogModule::startExperimentPhases()
+{
+    if(!hasBellBeenReceived()) {
+        LOG_DEBUG("No bell received, cannot start experiment phases");
+        return; // Skip if no bell has been received
+    }
+
+    if (getTimeSinceLastBell() > EXPERIMENT_PHASES[0].duration_seconds * 1000 + EXPERIMENT_PHASES[1].duration_seconds * 1000) {
+        // Phase 3
+        LOG_INFO("Currently in Phase 3 of the experiment");
+        moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[2].send_interval_seconds;
+    } else if (getTimeSinceLastBell() > EXPERIMENT_PHASES[0].duration_seconds * 1000) {
+        // Phase 2
+        LOG_INFO("Currently in Phase 2 of the experiment");
+        moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[1].send_interval_seconds;
+    } else {
+        // Phase 1
+        LOG_INFO("Currently in Phase 1 of the experiment");
+        moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[0].send_interval_seconds;
+    }
+
 }

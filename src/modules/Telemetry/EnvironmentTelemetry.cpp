@@ -194,7 +194,7 @@ int32_t EnvironmentTelemetryModule::runOnce()
 
     moduleConfig.telemetry.environment_measurement_enabled = 1;
     moduleConfig.telemetry.environment_screen_enabled = 1;
-    moduleConfig.telemetry.environment_update_interval = 15;
+    // moduleConfig.telemetry.environment_update_interval = 15;
 
     if (!(moduleConfig.telemetry.environment_measurement_enabled || moduleConfig.telemetry.environment_screen_enabled ||
           ENVIRONMENTAL_TELEMETRY_MODULE_ENABLE)) {
@@ -291,9 +291,7 @@ int32_t EnvironmentTelemetryModule::runOnce()
         }
 
         if (((lastSentToMesh == 0) ||
-             !Throttle::isWithinTimespanMs(lastSentToMesh, Default::getConfiguredOrDefaultMsScaled(
-                                                               moduleConfig.telemetry.environment_update_interval,
-                                                               default_telemetry_broadcast_interval_secs, numOnlineNodes))) &&
+             !Throttle::isWithinTimespanMs(lastSentToMesh, moduleConfig.telemetry.environment_update_interval * 1000)) &&
             airTime->isTxAllowedChannelUtil(config.device.role != meshtastic_Config_DeviceConfig_Role_SENSOR) &&
             airTime->isTxAllowedAirUtil()) {
             sendTelemetry();
@@ -306,7 +304,7 @@ int32_t EnvironmentTelemetryModule::runOnce()
             lastSentToPhone = millis();
         }
     }
-    return min(sendToPhoneIntervalMs, result);
+    return 1000; // Run this thread every second
 }
 
 bool EnvironmentTelemetryModule::wantUIFrame()
