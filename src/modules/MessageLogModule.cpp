@@ -162,6 +162,10 @@ int32_t MessageLogModule::runOnce()
         firstTime = false;
         LOG_INFO("Initializing Message Log Module");
 
+        moduleConfig.telemetry.environment_measurement_enabled = 1;
+        moduleConfig.telemetry.environment_screen_enabled = 0;
+        moduleConfig.telemetry.environment_update_interval = 15 * 60; // 15 minutes in seconds
+
         // Initialize log directory
         initLogDirectory();
         
