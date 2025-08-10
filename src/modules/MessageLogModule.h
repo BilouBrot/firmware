@@ -169,6 +169,9 @@ private:
     /** Get total size of all log files */
     uint32_t getTotalLogSize();
 
+    /** Get logs folder size in bytes */
+    uint32_t getLogsFolderSizeBytes();
+
     /** prints all log entries */
     void printAllLogEntries();
 

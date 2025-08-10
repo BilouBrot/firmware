@@ -505,6 +505,29 @@ uint32_t MessageLogModule::getTotalLogSize()
     return totalSize;
 }
 
+uint32_t MessageLogModule::getLogsFolderSizeBytes()
+{
+#ifndef FSCom
+    return 0;
+#else
+    uint32_t totalSize = 0;
+    
+    // Add current buffer size (in memory)
+    totalSize += logBuffer.size() * sizeof(MessageLogEntry);
+    
+    // Add size of log files on disk
+    auto files = getLogFiles();
+    for (const auto& filename : files) {
+        struct stat st;
+        if (stat(filename.c_str(), &st) == 0) {
+            totalSize += st.st_size;
+        }
+    }
+    
+    return totalSize;
+#endif
+}
+
 void MessageLogModule::printAllLogEntries()
 {
     #ifdef FSCom
@@ -522,6 +545,14 @@ void MessageLogModule::printAllLogEntries()
                  owner.macaddr[3], owner.macaddr[4], owner.macaddr[5]);
         LOG_INFO("LONG_NAME:%s", owner.long_name);
         LOG_INFO("SHORT_NAME:%s", owner.short_name);
+        
+        // Print storage information
+        uint32_t logsFolderSizeMB = getLogsFolderSizeBytes() / (1024 * 1024);
+        
+        LOG_INFO("LOGS_FOLDER_SIZE_MB:%u", logsFolderSizeMB);
+        LOG_INFO("TOTAL_STORAGE_MB:N/A");
+        LOG_INFO("USED_STORAGE_MB:N/A");
+        LOG_INFO("FREE_STORAGE_MB:N/A");
         
         // Print buffer entries first
         for (const auto& entry : logBuffer) {
