@@ -425,13 +425,8 @@ MessageLogEntry MessageLogModule::createLogEntry(const meshtastic_MeshPacket &mp
     
     entry.timestamp = getTimeSinceLastBell();
     entry.from = mp.from;
-    entry.to = mp.to;
     entry.id = mp.id;
-    entry.channel = mp.channel;
     entry.hop_limit = mp.hop_limit;
-    entry.hop_start = mp.hop_start;
-    entry.is_sent = isSent;
-    entry.want_ack = mp.want_ack;
     entry.portnum = mp.which_payload_variant == meshtastic_MeshPacket_decoded_tag ? 
                     mp.decoded.portnum : meshtastic_PortNum_UNKNOWN_APP; // Use decoded portnum if available
     entry.rx_snr = rxSnr;
@@ -453,12 +448,6 @@ MessageLogEntry MessageLogModule::createLogEntry(const meshtastic_MeshPacket &mp
     } else {
         entry.channel_utilization = -1.0f; // Indicate unavailable
         entry.tx_utilization = -1.0f;      // Indicate unavailable
-    }
-    
-    // Copy payload (truncate if too large)
-    entry.payload_size = std::min((size_t)mp.decoded.payload.size, sizeof(entry.payload));
-    if (entry.payload_size > 0) {
-        memcpy(entry.payload, mp.decoded.payload.bytes, entry.payload_size);
     }
     
     return entry;
@@ -556,10 +545,9 @@ void MessageLogModule::printAllLogEntries()
         
         // Print buffer entries first
         for (const auto& entry : logBuffer) {
-            LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d,%u,%.2f,%.2f",
-                     entry.timestamp, entry.from, entry.to, entry.id, entry.channel,
-                     entry.hop_limit, entry.hop_start, entry.is_sent ? 1 : 0,
-                     entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi, entry.packet_size,
+            LOG_INFO("LOG:%u,%u,%u,%u,%d,%d,%d,%u,%.2f,%.2f",
+                     entry.timestamp, entry.from, entry.id,
+                     entry.hop_limit, entry.portnum, entry.rx_snr, entry.rx_rssi, entry.packet_size,
                      entry.channel_utilization, entry.tx_utilization);
         }
         
@@ -570,10 +558,9 @@ void MessageLogModule::printAllLogEntries()
             if (file) {
                 MessageLogEntry entry;
                 while (file.readBytes((char*)&entry, sizeof(MessageLogEntry)) == sizeof(MessageLogEntry)) {
-                    LOG_INFO("LOG:%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d,%u,%.2f,%.2f",
-                             entry.timestamp, entry.from, entry.to, entry.id, entry.channel,
-                             entry.hop_limit, entry.hop_start, entry.is_sent ? 1 : 0,
-                             entry.want_ack ? 1 : 0, entry.portnum, entry.rx_snr, entry.rx_rssi, entry.packet_size,
+                    LOG_INFO("LOG:%u,%u,%u,%u,%d,%d,%d,%u,%.2f,%.2f",
+                             entry.timestamp, entry.from, entry.id,
+                             entry.hop_limit, entry.portnum, entry.rx_snr, entry.rx_rssi, entry.packet_size,
                              entry.channel_utilization, entry.tx_utilization);
                 }
                 file.close();

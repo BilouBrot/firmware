@@ -38,16 +38,9 @@ static constexpr size_t EXPERIMENT_PHASE_COUNT = sizeof(EXPERIMENT_PHASES) / siz
 typedef struct {
     uint32_t timestamp;          // Unix timestamp when message was logged
     uint32_t from;              // Source node ID
-    uint32_t to;                // Destination node ID (0 for broadcast)
     uint32_t id;                // Packet ID
-    uint8_t channel;            // Channel index
     uint8_t hop_limit;          // Hop limit
-    uint8_t hop_start;          // Initial hop limit
-    bool is_sent;               // true for sent messages, false for received
-    bool want_ack;              // Whether ACK was requested
     meshtastic_PortNum portnum; // Port number (message type)
-    uint8_t payload_size;       // Size of payload in bytes
-    uint8_t payload[256];       // Message payload (truncated if larger)
     int32_t rx_snr;             // Signal-to-noise ratio (for received messages, -999 for sent messages)
     int32_t rx_rssi;            // Signal strength (for received messages, -999 for sent messages)
     uint32_t packet_size;       // Total packet size including header and payload
