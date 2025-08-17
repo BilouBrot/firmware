@@ -425,6 +425,7 @@ MessageLogEntry MessageLogModule::createLogEntry(const meshtastic_MeshPacket &mp
     
     entry.timestamp = getTimeSinceLastBell();
     entry.from = mp.from;
+    entry.last_hop_from = mp.relay_node;  // Track the last hop that sent this packet
     entry.id = mp.id;
     entry.hop_limit = mp.hop_limit;
     entry.portnum = mp.which_payload_variant == meshtastic_MeshPacket_decoded_tag ? 
@@ -493,8 +494,8 @@ void MessageLogModule::printAllLogEntries()
         
         // Print buffer entries first
         for (const auto& entry : logBuffer) {
-            LOG_INFO("LOG:%u,%u,%u,%u,%d,%d,%d,%u,%.2f,%.2f",
-                     entry.timestamp, entry.from, entry.id,
+            LOG_INFO("LOG:%u,%u,%u,%u,%u,%d,%d,%d,%u,%.2f,%.2f",
+                     entry.timestamp, entry.from, (uint32_t)entry.last_hop_from, entry.id,
                      entry.hop_limit, entry.portnum, entry.rx_snr, entry.rx_rssi, entry.packet_size,
                      entry.channel_utilization, entry.tx_utilization);
         }
@@ -506,8 +507,8 @@ void MessageLogModule::printAllLogEntries()
             if (file) {
                 MessageLogEntry entry;
                 while (file.readBytes((char*)&entry, sizeof(MessageLogEntry)) == sizeof(MessageLogEntry)) {
-                    LOG_INFO("LOG:%u,%u,%u,%u,%d,%d,%d,%u,%.2f,%.2f",
-                             entry.timestamp, entry.from, entry.id,
+                    LOG_INFO("LOG:%u,%u,%u,%u,%u,%d,%d,%d,%u,%.2f,%.2f",
+                             entry.timestamp, entry.from, (uint32_t)entry.last_hop_from, entry.id,
                              entry.hop_limit, entry.portnum, entry.rx_snr, entry.rx_rssi, entry.packet_size,
                              entry.channel_utilization, entry.tx_utilization);
                 }

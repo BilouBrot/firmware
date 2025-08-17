@@ -37,7 +37,8 @@ static constexpr size_t EXPERIMENT_PHASE_COUNT = sizeof(EXPERIMENT_PHASES) / siz
  */
 typedef struct {
     uint32_t timestamp;          // Unix timestamp when message was logged
-    uint32_t from;              // Source node ID
+    uint32_t from;              // Source node ID (original sender)
+    uint8_t last_hop_from;      // Last byte of node ID that relayed this packet (from relay_node field)
     uint32_t id;                // Packet ID
     uint8_t hop_limit;          // Hop limit
     meshtastic_PortNum portnum; // Port number (message type)
