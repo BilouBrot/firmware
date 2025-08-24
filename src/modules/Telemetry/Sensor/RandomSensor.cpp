@@ -33,6 +33,12 @@ bool RandomSensor::getMetrics(meshtastic_Telemetry *measurement)
 
     measurement->variant.environment_metrics.has_barometric_pressure = true;
     measurement->variant.environment_metrics.barometric_pressure = random(95000, 105000) / 100.0;
+
+    measurement->variant.environment_metrics.has_gas_resistance = true;
+    measurement->variant.environment_metrics.gas_resistance = random(0, 10000) / 100.0;
+
+    measurement->variant.environment_metrics.has_iaq = true;
+    measurement->variant.environment_metrics.iaq = random(0, 100);
             
     return true;
 }
