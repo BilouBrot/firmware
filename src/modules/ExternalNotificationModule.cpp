@@ -440,6 +440,7 @@ ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshP
                                p.payload.bytes[digitEnd] <= '9') {
                             digitEnd++;
                         }
+                        LOG_DEBUG("Digits found from index %d to %d", digitStart, digitEnd - 1);
                         
                         // If we found digits, parse them
                         if (digitEnd > digitStart) {
@@ -461,7 +462,7 @@ ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshP
             }
 
             // Reset custom timer when bell character is received
-            if (containsBell && alertBellTimerStart == 0) {
+            if (containsBell && !hasReceivedBell) {
                 alertBellTimerStart = millis();
                 hasReceivedBell = true;
                 
