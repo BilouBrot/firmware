@@ -39,6 +39,15 @@ bool RandomSensor::getMetrics(meshtastic_Telemetry *measurement)
 
     measurement->variant.environment_metrics.has_iaq = true;
     measurement->variant.environment_metrics.iaq = random(0, 100);
+
+    measurement->variant.environment_metrics.has_distance = true;
+    measurement->variant.environment_metrics.distance = random(0, 10000) / 100.0;
+
+    measurement->variant.environment_metrics.has_wind_direction = true;
+    measurement->variant.environment_metrics.wind_direction = random(0, 360);
+
+    measurement->variant.environment_metrics.has_wind_speed = true;
+    measurement->variant.environment_metrics.wind_speed = random(0, 100) / 10.0;
             
     return true;
 }
