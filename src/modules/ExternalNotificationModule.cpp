@@ -463,6 +463,7 @@ ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshP
             // Reset custom timer when bell character is received
             if (containsBell && alertBellTimerStart == 0) {
                 alertBellTimerStart = millis();
+                hasReceivedBell = true;
                 
                 // Apply minutes offset if specified (subtract from timer start)
                 if (bellMinutesOffset > 0) {
