@@ -66,7 +66,7 @@ class ExternalNotificationModule : public SinglePortModule, private concurrency:
     bool isMuted = false;
 
     // Custom timer to track when alert bell was received
-    uint32_t alertBellTimerStart = 0;
+    int32_t alertBellTimerStart = 0;
     bool hasReceivedBell = false;
 
     virtual AdminMessageHandleResult handleAdminMessageForModule(const meshtastic_MeshPacket &mp,
