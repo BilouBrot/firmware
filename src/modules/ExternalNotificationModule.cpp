@@ -422,7 +422,7 @@ ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshP
             // Check if the message contains a bell character. Don't do this loop for every pin, just once.
             auto &p = mp.decoded;
             bool containsBell = false;
-            int32_t bellMinutesOffset = 0; // Minutes to subtract from timer
+            uint32_t bellMinutesOffset = 0; // Minutes to subtract from timer
             
             for (int i = 0; i < p.payload.size; i++) {
                 if (p.payload.bytes[i] == ASCII_BELL) {
@@ -444,8 +444,8 @@ ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshP
                         
                         // If we found digits, parse them
                         if (digitEnd > digitStart) {
-                            int32_t minutes = 0;
-                            int32_t multiplier = 1;
+                            uint32_t minutes = 0;
+                            uint32_t multiplier = 1;
                             
                             // Parse from right to left to build the number
                             for (int j = digitEnd - 1; j >= digitStart; j--) {
@@ -468,7 +468,7 @@ ProcessMessage ExternalNotificationModule::handleReceived(const meshtastic_MeshP
                 
                 // Apply minutes offset if specified (subtract from timer start)
                 if (bellMinutesOffset > 0) {
-                    int32_t offsetMs = bellMinutesOffset * 60 * 1000; // Convert minutes to milliseconds
+                    uint32_t offsetMs = bellMinutesOffset * 60 * 1000; // Convert minutes to milliseconds
                     alertBellTimerStart -= offsetMs;
                     LOG_DEBUG("Custom timer reset with %u minute offset: Bell received at %u ms (adjusted from %u ms)", 
                             bellMinutesOffset, alertBellTimerStart, alertBellTimerStart + offsetMs);
