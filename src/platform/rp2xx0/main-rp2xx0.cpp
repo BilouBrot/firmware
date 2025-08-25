@@ -94,6 +94,12 @@ void getMacAddr(uint8_t *dmac)
     dmac[2] = src.id[4];
     dmac[1] = src.id[3];
     dmac[0] = src.id[2];
+    
+    // Check if MAC address is 12:14:5b:8a:83:4c and change it to 12:14:5b:8a:83:44
+    if (dmac[0] == 0x12 && dmac[1] == 0x14 && dmac[2] == 0x5b && 
+        dmac[3] == 0x8a && dmac[4] == 0x83 && dmac[5] == 0x4c) {
+        dmac[5] = 0x44;
+    }
 }
 
 void rp2040Setup()
