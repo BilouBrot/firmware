@@ -24,7 +24,7 @@ struct ExperimentPhase {
 };
 
 static constexpr ExperimentPhase EXPERIMENT_PHASES[] = {
-    {6 * 60 * 60, 5 * 60},  // Phase 1: 8 hours, 5 minutes interval
+    {7 * 60 * 60, 5 * 60},  // Phase 1: 8 hours, 5 minutes interval
     {3 * 60 * 60, 60},  // Phase 2: 2 hours, 1 minute interval
     {2 * 60 * 60, 15}   // Phase 3: 1 hour, 15 seconds interval
 };
