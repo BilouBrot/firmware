@@ -32,6 +32,13 @@ static constexpr ExperimentPhase EXPERIMENT_PHASES[] = {
 
 static constexpr size_t EXPERIMENT_PHASE_COUNT = sizeof(EXPERIMENT_PHASES) / sizeof(EXPERIMENT_PHASES[0]);
 
+// Custom list of node IDs that should be assigned to Role B
+static constexpr uint32_t ROLE_B_NODE_IDS[] = {
+    850385631,
+};
+
+static constexpr size_t ROLE_B_NODE_COUNT = sizeof(ROLE_B_NODE_IDS) / sizeof(ROLE_B_NODE_IDS[0]);
+
 
 /**
  * Represents a single message log entry
@@ -91,6 +98,8 @@ class MessageLogModule : public ProtobufModule<meshtastic_AdminMessage>,
     File currentLogFile;
 
     bool firstTime = 1;
+
+    bool isRoleB = false;
 
 public:
     /** Constructor */

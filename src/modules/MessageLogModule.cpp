@@ -166,6 +166,22 @@ int32_t MessageLogModule::runOnce()
         moduleConfig.telemetry.environment_screen_enabled = 0;
         moduleConfig.telemetry.environment_update_interval = 15 * 60; // 15 minutes in seconds
 
+        // Check if this node's ID is in the Role B list
+        uint32_t currentNodeId = nodeDB->getNodeNum();
+        isRoleB = false; // Default to Role A
+        
+        for (size_t i = 0; i < ROLE_B_NODE_COUNT; i++) {
+            if (currentNodeId == ROLE_B_NODE_IDS[i]) {
+                isRoleB = true;
+                LOG_INFO("Node ID 0x%08x found in Role B list - assigned to Role B", currentNodeId);
+                break;
+            }
+        }
+        
+        if (!isRoleB) {
+            LOG_INFO("Node ID 0x%08x not in Role B list - assigned to Role A", currentNodeId);
+        }
+
         // Initialize log directory
         initLogDirectory();
         
@@ -532,6 +548,7 @@ bool MessageLogModule::isImportantMessage(const meshtastic_MeshPacket &mp)
             mp.decoded.portnum == meshtastic_PortNum_TELEMETRY_APP);
 }
 
+
 void MessageLogModule::startExperimentPhases()
 {
     if(!hasBellBeenReceived()) {
@@ -541,6 +558,10 @@ void MessageLogModule::startExperimentPhases()
 
     uint32_t cooldownDuration = 30 * 60; // 30 minutes cooldown between phases in seconds
     uint32_t timeSinceStart = getTimeSinceLastBell();
+
+    uint32_t roleB_interval_seconds = cooldownDuration * 2 + 
+                                     EXPERIMENT_PHASES[0].send_interval_seconds + 
+                                     EXPERIMENT_PHASES[1].send_interval_seconds;
 
     // Convert everything to milliseconds for consistent comparison
     uint32_t phase1Duration = EXPERIMENT_PHASES[0].duration_seconds * 1000;
@@ -557,6 +578,22 @@ void MessageLogModule::startExperimentPhases()
     uint32_t phase3End = cooldown2End + phase3Duration;
     uint32_t cooldown3End = phase3End + cooldownDurationMs;
     uint32_t phase4End = cooldown3End + phase4Duration;
+
+    if (timeSinceStart > phase4End) {
+        // Experiment ended, maintain last phase settings
+        LOG_INFO("Experiment ended");
+        moduleConfig.telemetry.environment_update_interval = 4 * 60 * 60; // Set to 4 hours
+        return;
+    }
+
+    if (timeSinceStart > phase2End && isRoleB) {
+        // stop sending and rebroadcast
+        LOG_INFO("Role B: Stopping sending and rebroadcasting messages");
+        moduleConfig.telemetry.environment_update_interval = roleB_interval_seconds;
+        owner.role = meshtastic_Config_DeviceConfig_Role_CLIENT_MUTE;
+        config.device.role = meshtastic_Config_DeviceConfig_Role_CLIENT_MUTE;
+        return;
+    } 
 
     if (timeSinceStart > cooldown3End) {
         // Phase 4
