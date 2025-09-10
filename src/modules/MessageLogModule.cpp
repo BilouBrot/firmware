@@ -539,44 +539,81 @@ void MessageLogModule::startExperimentPhases()
         return; // Skip if no bell has been received
     }
 
-    uint32_t cooldownDuration = 30 * 60; // 30 minutes cooldown between phases in seconds
-    uint32_t timeSinceStart = getTimeSinceLastBell();
-
-    // Convert everything to milliseconds for consistent comparison
-    uint32_t phase1Duration = EXPERIMENT_PHASES[0].duration_seconds * 1000;
-    uint32_t phase2Duration = EXPERIMENT_PHASES[1].duration_seconds * 1000;
-    uint32_t cooldownDurationMs = cooldownDuration * 1000;
-
-    uint32_t setupEnd = 60 * 60 * 1000; // 1 hour setup phase in milliseconds
-    uint32_t phase1End = phase1Duration + setupEnd;
-    uint32_t cooldown1End = phase1End + cooldownDurationMs;
-    uint32_t phase2End = cooldown1End + phase2Duration;
-    uint32_t cooldown2End = phase2End + cooldownDurationMs;
-
-    if (timeSinceStart > cooldown2End) {
-        // Phase 3
-        LOG_INFO("Currently in Phase 3 of the experiment");
-        moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[2].send_interval_seconds;
-    } else if (timeSinceStart > phase2End) {
-        // Cooldown between Phase 2 and Phase 3
-        LOG_INFO("Currently in Cooldown period between Phase 2 and Phase 3 of the experiment");
-        moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[1].send_interval_seconds + cooldownDuration;
-    } else if (timeSinceStart > cooldown1End) {
-        // Phase 2
-        LOG_INFO("Currently in Phase 2 of the experiment");
-        moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[1].send_interval_seconds;
-    } else if (timeSinceStart > phase1End) {
-        // Cooldown between Phase 1 and Phase 2
-        LOG_INFO("Currently in Cooldown period between Phase 1 and Phase 2 of the experiment");
-        moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[0].send_interval_seconds + cooldownDuration;
-    } else if (timeSinceStart > setupEnd) {
-        // Phase 1
-        LOG_INFO("Currently in Phase 1 of the experiment");
-        moduleConfig.telemetry.environment_update_interval = EXPERIMENT_PHASES[0].send_interval_seconds;
-    } else {
-        // Setup phase
-        LOG_INFO("Currently in Setup phase of the experiment");
-        moduleConfig.telemetry.environment_update_interval = setupEnd / 1000; // Convert back to seconds
+    const uint32_t COOLDOWN_DURATION_SECONDS = 30 * 60; // 30 minutes cooldown between phases
+    const uint32_t SETUP_DURATION_SECONDS = 60 * 60;    // 1 hour setup phase
+    
+    uint32_t timeSinceStart = getTimeSinceLastBell(); // This is in milliseconds
+    
+    // Build timeline of experiment phases (all times in milliseconds for comparison)
+    struct PhaseInfo {
+        uint32_t startTime;    // in milliseconds
+        uint32_t endTime;      // in milliseconds
+        uint32_t updateInterval; // in seconds (for moduleConfig)
+        bool is_test_b;                 // True for test B, false for test A
+        const char* name;
+        bool isCooldown;
+    };
+    
+    std::vector<PhaseInfo> timeline;
+    uint32_t currentTime = 0; // in milliseconds
+    
+    // Setup phase
+    timeline.push_back({
+        currentTime, 
+        currentTime + (SETUP_DURATION_SECONDS * 1000),
+        SETUP_DURATION_SECONDS,
+        false,
+        "Setup phase",
+        false
+    });
+    currentTime += (SETUP_DURATION_SECONDS * 1000);
+    
+    // Build experiment phases with cooldowns
+    const size_t numPhases = sizeof(EXPERIMENT_PHASES) / sizeof(EXPERIMENT_PHASES[0]);
+    for (size_t i = 0; i < numPhases; i++) {
+        // Add experiment phase
+        timeline.push_back({
+            currentTime,
+            currentTime + (EXPERIMENT_PHASES[i].duration_seconds * 1000),
+            EXPERIMENT_PHASES[i].send_interval_seconds,
+            EXPERIMENT_PHASES[i].is_test_b,
+            ("Phase " + std::to_string(i + 1) + " of the experiment").c_str(),
+            false
+        });
+        currentTime += (EXPERIMENT_PHASES[i].duration_seconds * 1000);
+        
+        // Add cooldown after phase (except for the last phase)
+        if (i < numPhases - 1) {
+            timeline.push_back({
+                currentTime,
+                currentTime + (COOLDOWN_DURATION_SECONDS * 1000),
+                EXPERIMENT_PHASES[i].send_interval_seconds + COOLDOWN_DURATION_SECONDS,
+                false,
+                ("Cooldown period between Phase " + std::to_string(i + 1) + " and Phase " + std::to_string(i + 2) + " of the experiment").c_str(),
+                true
+            });
+            currentTime += (COOLDOWN_DURATION_SECONDS * 1000);
+        }
     }
-
+    
+    // Find current phase
+    for (const auto& phase : timeline) {
+        if (timeSinceStart >= phase.startTime && timeSinceStart < phase.endTime) {
+            LOG_INFO("Currently in %s", phase.name);
+            moduleConfig.telemetry.environment_update_interval = phase.updateInterval;
+            if (phase.is_test_b && !phase.isCooldown) {
+                LOG_INFO("Experiment Test B active");
+            } else {
+                LOG_INFO("Experiment Test A active");
+            }
+            return;
+        }
+    }
+    
+    // If we're past all phases, use setup settings
+    if (!timeline.empty()) {
+        const auto& lastPhase = timeline.back();
+        LOG_INFO("Experiment completed, using last phase settings");
+        moduleConfig.telemetry.environment_update_interval = SETUP_DURATION_SECONDS;
+    }
 }

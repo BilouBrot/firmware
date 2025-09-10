@@ -21,12 +21,14 @@
 struct ExperimentPhase {
     uint32_t duration_seconds;
     uint32_t send_interval_seconds;
+    bool is_test_b;                 // True for test B, false for test A
 };
 
 static constexpr ExperimentPhase EXPERIMENT_PHASES[] = {
-    {7 * 60 * 60, 5 * 60},  // Phase 1: 8 hours, 5 minutes interval
-    {3 * 60 * 60, 60},  // Phase 2: 2 hours, 1 minute interval
-    {2 * 60 * 60, 15}   // Phase 3: 1 hour, 15 seconds interval
+    {2 * 60 * 60, 60, false}, // Phase 1: 2 hours, 60s interval, Test A (ca 2400 messages)
+    {30 * 60, 15, false},         // Cooldown: 30 minutes, 15s interval, Test A (ca 2400 messages)
+    {2 * 60 * 60, 15, true},      // Phase 2: 2 hours, 15s interval, Test B (ca 1200 messages)
+    {30 * 60, 15, true},          // Cooldown: 30 minutes, 15s interval, Test B (ca 1200 messages)
 };
 
 static constexpr size_t EXPERIMENT_PHASE_COUNT = sizeof(EXPERIMENT_PHASES) / sizeof(EXPERIMENT_PHASES[0]);
