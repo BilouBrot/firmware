@@ -26,8 +26,8 @@ struct ExperimentPhase {
 static constexpr ExperimentPhase EXPERIMENT_PHASES[] = {
     {2 * 60 * 60, 60}, // Phase 1: 2 hours, 60s interval, Test A (ca 2400 messages)
     {30 * 60, 15},         // Cooldown: 30 minutes, 15s interval, Test A (ca 2400 messages)
-    {4 * 60 * 60, 60},      // Phase 2: 4 hours, 60s interval, Test B (ca 2400 messages)
-    {60 * 60, 15},          // Cooldown: 1 hour, 15s interval, Test B (ca 2400 messages)
+    {4 * 60 * 60, 60},      // Phase 2: 4 hours, 60s interval, Test B (ca 2640 messages)
+    {60 * 60, 15},          // Cooldown: 1 hour, 15s interval, Test B (ca 2640 messages)
 };
 
 static constexpr size_t EXPERIMENT_PHASE_COUNT = sizeof(EXPERIMENT_PHASES) / sizeof(EXPERIMENT_PHASES[0]);
@@ -35,6 +35,14 @@ static constexpr size_t EXPERIMENT_PHASE_COUNT = sizeof(EXPERIMENT_PHASES) / siz
 // Custom list of node IDs that should be assigned to Role B
 static constexpr uint32_t ROLE_B_NODE_IDS[] = {
     850385631,
+    3216968247,
+    3657204999,
+    1244890663,
+    1885646203,
+    2492130316,
+    1555421388,
+    3810370095,
+    1809178027,
 };
 
 static constexpr size_t ROLE_B_NODE_COUNT = sizeof(ROLE_B_NODE_IDS) / sizeof(ROLE_B_NODE_IDS[0]);
