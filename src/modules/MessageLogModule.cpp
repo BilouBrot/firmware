@@ -560,14 +560,14 @@ void MessageLogModule::startExperimentPhases()
     uint32_t timeSinceStart = getTimeSinceLastBell();
 
     uint32_t roleB_interval_seconds = cooldownDuration * 2 + 
-                                     EXPERIMENT_PHASES[0].send_interval_seconds + 
-                                     EXPERIMENT_PHASES[1].send_interval_seconds;
+                                     EXPERIMENT_PHASES[2].send_interval_seconds + 
+                                     EXPERIMENT_PHASES[3].send_interval_seconds;
 
     // Convert everything to milliseconds for consistent comparison
     uint32_t phase1Duration = EXPERIMENT_PHASES[0].duration_seconds * 1000;
     uint32_t phase2Duration = EXPERIMENT_PHASES[1].duration_seconds * 1000;
     uint32_t phase3Duration = EXPERIMENT_PHASES[2].duration_seconds * 1000;
-    uint32_t phase4Duration = EXPERIMENT_PHASES[2].duration_seconds * 1000;
+    uint32_t phase4Duration = EXPERIMENT_PHASES[3].duration_seconds * 1000;
     uint32_t cooldownDurationMs = cooldownDuration * 1000;
 
     uint32_t setupEnd = 60 * 60 * 1000; // 1 hour setup phase in milliseconds

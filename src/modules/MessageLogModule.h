@@ -26,8 +26,8 @@ struct ExperimentPhase {
 static constexpr ExperimentPhase EXPERIMENT_PHASES[] = {
     {2 * 60 * 60, 60}, // Phase 1: 2 hours, 60s interval, Test A (ca 2400 messages)
     {30 * 60, 15},         // Cooldown: 30 minutes, 15s interval, Test A (ca 2400 messages)
-    {2 * 60 * 60, 15},      // Phase 2: 2 hours, 15s interval, Test B (ca 1200 messages)
-    {30 * 60, 15},          // Cooldown: 30 minutes, 15s interval, Test B (ca 1200 messages)
+    {4 * 60 * 60, 60},      // Phase 2: 4 hours, 60s interval, Test B (ca 2400 messages)
+    {60 * 60, 15},          // Cooldown: 1 hour, 15s interval, Test B (ca 2400 messages)
 };
 
 static constexpr size_t EXPERIMENT_PHASE_COUNT = sizeof(EXPERIMENT_PHASES) / sizeof(EXPERIMENT_PHASES[0]);
