@@ -34,15 +34,16 @@ static constexpr size_t EXPERIMENT_PHASE_COUNT = sizeof(EXPERIMENT_PHASES) / siz
 
 // Custom list of node IDs that should be assigned to Role B
 static constexpr uint32_t ROLE_B_NODE_IDS[] = {
-    850385631,
+    3747675212,
     3216968247,
     3657204999,
-    1244890663,
+    1401983631,
     1885646203,
     2492130316,
     1555421388,
-    3810370095,
+    2861467513,
     1809178027,
+    2619132307,
 };
 
 static constexpr size_t ROLE_B_NODE_COUNT = sizeof(ROLE_B_NODE_IDS) / sizeof(ROLE_B_NODE_IDS[0]);
