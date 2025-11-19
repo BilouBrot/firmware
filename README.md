@@ -21,6 +21,29 @@
 	<a href="https://meshtastic.org/docs/">Documentation</a>
 </div>
 
+## Using the Logging Extension
+
+This firmware includes a logging feature implemented in the `MessageLogModule` that allows you to capture message logs on your Meshtastic device.
+
+If you want to use the custom Hardware from Emergencity select the pico2 environment
+
+### Configuration
+
+Before using the logging feature, adjust the following settings in your node configuration:
+- **Phase timings**: Configure the timing parameters as needed for your use case
+- **Node roles**: Set appropriate roles for the node that will perform logging
+
+### Usage
+
+1. **Start Logging**: After flashing the firmware and rebooting your device, send a Bell Character (ASCII `\x07`) from another device on a known channel to begin logging.
+
+2. **Stop Logging**: Reboot the device to stop logging.
+
+3. **Read Logs**: To access the captured logs, you have two options:
+   - Connect to the node and read logs directly via the serial monitor
+   - Use the automated script: `scripts/auto_log_capture.py`
+
+
 ## Overview
 
 This repository contains the official device firmware for Meshtastic, an open-source LoRa mesh networking project designed for long-range, low-power communication without relying on internet or cellular infrastructure. The firmware supports various hardware platforms, including ESP32, nRF52, RP2040/RP2350, and Linux-based devices.
