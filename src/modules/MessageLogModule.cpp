@@ -143,16 +143,9 @@ bool MessageLogModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, m
         return false;
     }
     
-    // Check if this is a message log command
-    // For now, we'll use a simple convention: admin messages with specific payload patterns
-    // In a full implementation, you'd define custom protobuf messages
-    
     LOG_DEBUG("Received admin message for message log");
     
-    // Parse the command from the admin message
-    // This is a simplified implementation - in practice you'd want proper protobuf definitions
-    
-    return false; // Let other handlers process this message too
+    return false;
 }
 
 int32_t MessageLogModule::runOnce()
@@ -323,7 +316,6 @@ void MessageLogModule::initLogDirectory()
 void MessageLogModule::cleanupOldLogFiles()
 {
     // Implementation to remove old log files if we exceed MESSAGE_LOG_MAX_FILES
-    // This would involve listing files and removing the oldest ones
     LOG_DEBUG("Cleanup old log files (placeholder)");
 }
 
